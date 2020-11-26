@@ -1,21 +1,62 @@
-import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React from 'react';
+import {
+    configureFonts,
+    DefaultTheme,
+    Provider as PaperProvider,
+} from 'react-native-paper';
+import { useFonts } from 'expo-font';
+import { AppLoading } from 'expo';
+import Main from './src/Main';
+import IconlyBold from './src/Icons/IconlyBold';
+import IconlyBroken from './src/Icons/IconlyBroken';
+
+const fontConfig = {
+    default: {
+        regular: {
+            fontFamily: 'Montserrat Medium',
+            fontWeight: '600',
+        },
+        medium: {
+            fontFamily: 'Montserrat SemiBold',
+            fontWeight: 'normal',
+        },
+        light: {
+            fontFamily: 'Montserrat Regular',
+            fontWeight: 'normal',
+        },
+    },
+};
+
+const theme = {
+    ...DefaultTheme,
+    roundness: 4,
+    colors: {
+        ...DefaultTheme.colors,
+        primary: '#FFF',
+        accent: '#070707',
+    },
+    fonts: configureFonts(fontConfig),
+};
 
 export default function App() {
-    return (
-        <View style={styles.container}>
-            <Text>Open up App.js to start app!</Text>
-            <StatusBar style="auto" />
-        </View>
+    let [fontsLoaded] = useFonts({
+        'Montserrat Regular': require('./assets/fonts/Montserrat-Regular.otf'),
+        'Montserrat Medium': require('./assets/fonts/Montserrat-Medium.otf'),
+        'Montserrat SemiBold': require('./assets/fonts/Montserrat-SemiBold.otf'),
+    });
+
+    return !fontsLoaded ? (
+        <AppLoading />
+    ) : (
+        <PaperProvider
+            settings={{
+                icon: (props) => (
+                    <IconlyBroken {...props} style={{ marginTop: 1.5 }} />
+                ),
+            }}
+            theme={theme}
+        >
+            <Main />
+        </PaperProvider>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-});
