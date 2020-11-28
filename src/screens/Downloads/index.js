@@ -7,7 +7,11 @@ const Home = () => {
         <>
             <Appbar.Header>
                 <Appbar.Content title="Downloads" />
-                <Appbar.Action icon="search" />
+                <Appbar.Action
+                    icon="setting"
+                    rippleColor="#afafaf"
+                    onPress={() => console.log('Settings pressed!')}
+                />
             </Appbar.Header>
             <View
                 style={{

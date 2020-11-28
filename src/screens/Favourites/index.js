@@ -7,7 +7,6 @@ const Favourites = () => {
         <>
             <Appbar.Header>
                 <Appbar.Content title="Favourites" />
-                <Appbar.Action icon="search" />
             </Appbar.Header>
             <View
                 style={{

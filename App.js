@@ -14,7 +14,7 @@ const fontConfig = {
     default: {
         regular: {
             fontFamily: 'Montserrat Medium',
-            fontWeight: '600',
+            fontWeight: 'normal',
         },
         medium: {
             fontFamily: 'Montserrat SemiBold',
@@ -33,7 +33,7 @@ const theme = {
     colors: {
         ...DefaultTheme.colors,
         primary: '#FFF',
-        accent: '#070707',
+        accent: '#2C3E50',
     },
     fonts: configureFonts(fontConfig),
 };
