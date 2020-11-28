@@ -1,6 +1,7 @@
-import React from 'react';
-import { Text, Appbar } from 'react-native-paper';
-import { View } from 'react-native';
+import React from "react";
+import { Text, Appbar } from "react-native-paper";
+import { View } from "react-native";
+import { Video } from "expo-av";
 
 const Home = () => {
     return (
@@ -10,18 +11,24 @@ const Home = () => {
                 <Appbar.Action
                     icon="setting"
                     rippleColor="#afafaf"
-                    onPress={() => console.log('Settings pressed!')}
+                    onPress={() => console.log("Settings pressed!")}
                 />
             </Appbar.Header>
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
+
+            <Video
+                source={{
+                    uri:
+                        "http://s14.bitdl.ir/Series/One.Piece.1080/One%20Piece.001.1080p.x265.bitdownload.ir.mkv",
                 }}
-            >
-                <Text>Downloads</Text>
-            </View>
+                rate={1.0}
+                volume={1.0}
+                isMuted={false}
+                resizeMode="cover"
+                shouldPlay
+                useNativeControls
+                isLooping
+                style={{ width: 300, height: 300 }}
+            />
         </>
     );
 };
