@@ -11,11 +11,15 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import SwipableViewStack from '../../Components/CardStack';
 import StackItem from '../../Components/StackItem';
+import FlatlistItem from '../../Components/FlatlistItem';
 import styles from './style';
+import { ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Home = () => {
     const [showSearch, setShowSearch] = useState(false);
-    const [scroll, setScroll] = useState(false);
+    const [scroll, setScroll] = useState(true);
+    const [offset, setOffset] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
 
     const items = [
@@ -40,36 +44,42 @@ const Home = () => {
 
     const listItems = [
         {
+            rating: 5.3,
             title: 'Weathering with you',
             key: 'weathering-with-you',
             image:
                 'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
         },
         {
+            rating: 7.7,
             title: 'Dororo',
             key: 'dororo',
             image: 'https://kg-portal.ru/img/73607/main.jpg',
         },
         {
+            rating: 9.5,
             title: 'Your name',
             key: 'your-name',
             image:
                 'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
         },
         {
+            rating: 5.3,
             title: 'Weathering with you',
-            key: 'weathering-with-you-1',
+            key: 'weathering-with-you',
             image:
                 'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
         },
         {
+            rating: 7.7,
             title: 'Dororo',
-            key: 'dororo-1',
+            key: 'dororo',
             image: 'https://kg-portal.ru/img/73607/main.jpg',
         },
         {
+            rating: 6.5,
             title: 'Your name',
-            key: 'your-name-1',
+            key: 'your-name',
             image:
                 'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
         },
@@ -127,17 +137,25 @@ const Home = () => {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 scrollEnabled={scroll}
+                style={{ height: 100 }}
             >
                 <View style={styles.container}>
                     <SwipableViewStack
-                        onSwipeStart={() => {
-                            console.log('started');
-                            setScroll(false);
-                        }}
-                        onSwipeEnd={() => {
-                            console.log('ended');
-                            setScroll(true);
-                        }}
+                        // onSwipeStart={() => {
+                        //     setScroll(false);
+                        // }}
+                        // onSwipeEnd={() => {
+                        //     setScroll(true);
+                        // }}
+                        // onTouchStart={() => {
+                        //     setScroll(false);
+                        // }}
+                        // onTouchEnd={() => {
+                        //     setScroll(true);
+                        // }}
+                        // onTouchCancel={() => {
+                        //     setScroll(true);
+                        // }}
                         onSwipe={() => setScroll(!false)}
                         initialSelectedIndex={1}
                         data={items}
@@ -146,16 +164,8 @@ const Home = () => {
                         stackSpacing={-20}
                     />
                 </View>
-                <View
-                    style={{
-                        paddingHorizontal: 16,
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Subheading style={{ fontSize: 20 }}>Animes</Subheading>
-
+                <View style={styles.heading}>
+                    <Subheading style={styles.headingText}>Animes</Subheading>
                     <IconButton
                         rippleColor="#afafaf"
                         icon="filter"
@@ -164,118 +174,15 @@ const Home = () => {
                 </View>
                 <FlatList
                     numColumns="2"
-                    style={{ flex: 1, paddingHorizontal: 8 }}
-                    showsVerticalScrollIndicator={false}
+                    style={styles.flatlist}
+                    showsVerticalScrollIndicator={true}
                     onEndReached={() => console.log('Test')}
-                    onEndReachedThreshold={0.7}
+                    onEndReachedThreshold={0.8}
                     data={listItems}
-                    renderItem={(rowData) => (
-                        <View
-                            style={{
-                                flex: 1,
-                                height: 300,
-                                backgroundColor: 'red',
-                                margin: 4,
-                                borderRadius: 8,
-                            }}
-                        ></View>
-                    )}
-                    keyExtractor={(item) => item.key.toString()}
+                    renderItem={({ item }) => <FlatlistItem {...item} />}
+                    keyExtractor={(item) => item.key}
                 />
             </ScrollView>
-
-            {/* <SectionList
-                numColumns="2"
-                showsVerticalScrollIndicator={false}
-                keyExtractor={(item, index) => item.title + index}
-                sections={[
-                    {
-                        data: [{}],
-                        renderItem: () => (
-                            <>
-                                <View style={styles.container}>
-                                    <SwipableViewStack
-                                        onSwipe={() => setScroll(false)}
-                                        initialSelectedIndex={1}
-                                        data={items}
-                                        renderItem={(element) => (
-                                            <StackItem {...element} />
-                                        )}
-                                        onItemClicked={(element) =>
-                                            console.log(element.title)
-                                        }
-                                        stackSpacing={-20}
-                                    />
-                                </View>
-                                <View
-                                    style={{
-                                        paddingHorizontal: 16,
-                                        flexDirection: 'row',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Subheading style={{ fontSize: 20 }}>
-                                        Animes
-                                    </Subheading>
-
-                                    <IconButton
-                                        rippleColor="#afafaf"
-                                        icon="filter"
-                                        onPress={() => console.log('asd')}
-                                    />
-                                </View>
-                            </>
-                        ),
-                    },
-                    {
-                        data: [{}],
-                        renderItem: ({}) => (
-                            <FlatList
-                                numColumns="2"
-                                style={{ flex: 1, paddingHorizontal: 8 }}
-                                showsVerticalScrollIndicator={false}
-                                onEndReached={() => console.log('Test')}
-                                onEndReachedThreshold={0.7}
-                                data={listItems}
-                                renderItem={(rowData) => (
-                                    <View
-                                        style={{
-                                            flex: 1,
-                                            height: 300,
-                                            backgroundColor: 'red',
-                                            margin: 4,
-                                            borderRadius: 8,
-                                        }}
-                                    ></View>
-                                )}
-                                keyExtractor={(item) => item.key.toString()}
-                            />
-                        ),
-                    },
-                ]}
-            /> */}
-
-            {/* <FlatList
-                numColumns="2"
-                style={{ flex: 1, paddingHorizontal: 8 }}
-                showsVerticalScrollIndicator={false}
-                onEndReached={() => console.log('Test')}
-                onEndReachedThreshold={0.7}
-                data={listItems}
-                renderItem={(rowData) => (
-                    <View
-                        style={{
-                            flex: 1,
-                            height: 300,
-                            backgroundColor: 'red',
-                            margin: 4,
-                            borderRadius: 8,
-                        }}
-                    ></View>
-                )}
-                keyExtractor={(item) => item.key.toString()}
-            /> */}
         </>
     );
 };

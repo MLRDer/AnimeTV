@@ -11,5 +11,14 @@ export default StyleSheet.create({
         width: '100%',
         marginTop: -8,
         marginBottom: 40,
+        zIndex: 100,
     },
+    heading: {
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    headingText: { fontSize: 20 },
+    flatlist: { flex: 1, paddingHorizontal: 8 },
 });
