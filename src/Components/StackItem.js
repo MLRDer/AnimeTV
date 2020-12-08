@@ -3,6 +3,24 @@ import { Text } from 'react-native-paper';
 import { View, ImageBackground, Dimensions, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const StackItem = ({ title, image }) => {
+    return (
+        <View style={styles.container}>
+            <ImageBackground
+                source={{ uri: image }}
+                style={styles.imageBackground}
+            >
+                <LinearGradient
+                    colors={['transparent', '#34495eef']}
+                    style={styles.linearGradient}
+                >
+                    <Text style={styles.title}>{title}</Text>
+                </LinearGradient>
+            </ImageBackground>
+        </View>
+    );
+};
+
 const { width } = Dimensions.get('screen');
 
 const styles = StyleSheet.create({
@@ -10,7 +28,7 @@ const styles = StyleSheet.create({
         width: width - 24,
         height: 240,
         borderColor: 'red',
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: 'hidden',
         backgroundColor: '#999',
     },
@@ -32,23 +50,5 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 });
-
-const StackItem = ({ title, image }) => {
-    return (
-        <View style={styles.container}>
-            <ImageBackground
-                source={{ uri: image }}
-                style={styles.imageBackground}
-            >
-                <LinearGradient
-                    colors={['transparent', '#34495eef']}
-                    style={styles.linearGradient}
-                >
-                    <Text style={styles.title}>{title}</Text>
-                </LinearGradient>
-            </ImageBackground>
-        </View>
-    );
-};
 
 export default StackItem;

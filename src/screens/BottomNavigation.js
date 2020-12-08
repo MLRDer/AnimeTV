@@ -10,14 +10,19 @@ const routes = [
     { key: 'downloads', title: 'Downloads', icon: 'download' },
 ];
 
-const Bottom = () => {
+const Bottom = ({ navigation }) => {
     const [index, setIndex] = useState(0);
 
-    const renderScene = BottomNavigation.SceneMap({
-        home: Home,
-        favourites: Favourites,
-        downloads: Downloads,
-    });
+    const renderScene = ({ route, jumpTo }) => {
+        switch (route.key) {
+            case 'home':
+                return <Home jumpTo={jumpTo} />;
+            case 'favourites':
+                return <Favourites jumpTo={jumpTo} />;
+            case 'downloads':
+                return <Downloads navigation={navigation} jumpTo={jumpTo} />;
+        }
+    };
 
     return (
         <>

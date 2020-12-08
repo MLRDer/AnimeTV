@@ -1,36 +1,123 @@
-import React from "react";
-import { Text, Appbar } from "react-native-paper";
-import { View } from "react-native";
-import { Video } from "expo-av";
+import React, { useState } from 'react';
+import { Appbar, IconButton, ProgressBar } from 'react-native-paper';
+import { FlatList } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import DownloadsItem from '../../components/DownloadsItem';
 
-const Home = () => {
+const Downloads = ({ navigation }) => {
+    const downloads = [
+        {
+            name: 'Anime name',
+            key: '123',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456789',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456789',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+        {
+            name: 'Anime name',
+            key: '123456789',
+            image: 'https://kg-portal.ru/img/73607/main.jpg',
+            episode: 'Episode name',
+            size: 432,
+            progress: 29,
+            downloading: true,
+        },
+    ];
+
     return (
         <>
+            <StatusBar style="dark" />
             <Appbar.Header>
                 <Appbar.Content title="Downloads" />
                 <Appbar.Action
                     icon="setting"
                     rippleColor="#afafaf"
-                    onPress={() => console.log("Settings pressed!")}
+                    onPress={() =>
+                        navigation.navigate('Player', {
+                            title: 'Tenet 2020!',
+                            source:
+                                'http://dl.mellimovies.com/Movie_EN/99/6/Tenet.2020/Tenet.2020.480p.HDRip.mkv',
+                            poster:
+                                'https://www.slashgear.com/wp-content/uploads/2019/12/Tenet-screenshot-1280x720.jpg',
+                        })
+                    }
                 />
             </Appbar.Header>
 
-            <Video
-                source={{
-                    uri:
-                        "http://s14.bitdl.ir/Series/One.Piece.1080/One%20Piece.001.1080p.x265.bitdownload.ir.mkv",
-                }}
-                rate={1.0}
-                volume={1.0}
-                isMuted={false}
-                resizeMode="cover"
-                shouldPlay
-                useNativeControls
-                isLooping
-                style={{ width: 300, height: 300 }}
+            <FlatList
+                data={downloads}
+                contentContainerStyle={{ padding: 8 }}
+                keyExtractor={(item) => item.key}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item }) => <DownloadsItem item={item} />}
             />
         </>
     );
 };
 
-export default Home;
+export default Downloads;

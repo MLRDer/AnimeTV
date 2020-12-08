@@ -7,8 +7,8 @@ import {
 import { useFonts } from 'expo-font';
 import { AppLoading } from 'expo';
 import Main from './src/Main';
-import IconlyBold from './src/Icons/IconlyBold';
-import IconlyBroken from './src/Icons/IconlyBroken';
+import IconlyBold from './src/icons/IconlyBold';
+import IconlyBroken from './src/icons/IconlyBroken';
 
 const fontConfig = {
     default: {
@@ -50,9 +50,17 @@ export default function App() {
     ) : (
         <PaperProvider
             settings={{
-                icon: (props) => (
-                    <IconlyBroken {...props} style={{ marginTop: 1.5 }} />
-                ),
+                icon: (props) => {
+                    if (props.direction === true) {
+                        return (
+                            <IconlyBold {...props} style={{ fontSize: 24 }} />
+                        );
+                    }
+
+                    return (
+                        <IconlyBroken {...props} style={{ marginTop: 1.5 }} />
+                    );
+                },
             }}
             theme={theme}
         >

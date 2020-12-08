@@ -13,7 +13,7 @@ export default {
     'arrow---left-circle': '',
     'arrow---left-square': '',
     'arrow---left': '',
-    'arrow---right-2': '',
+    'play-arrow': '',
     'arrow---right-3': '',
     'arrow---right-circle': '',
     'arrow---right-square': '',
