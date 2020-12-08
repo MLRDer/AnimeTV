@@ -1,5 +1,5 @@
 import { useReducer, useEffect } from 'react';
-import Api from './index';
+import api from './index';
 import Actions from './actions';
 import { reducer } from './reducer';
 
@@ -12,21 +12,18 @@ const useAnimes = () => {
 
     useEffect(() => {
         dispatch({ type: Actions.MAKE_REQUEST });
-        Api({
-            method: 'get',
-            url: `todos`,
-        })
+        api.get('todos')
             .then((data) => {
-                console.log(data);
+                // console.log('DATA: ', data.data);
                 dispatch({
                     type: Actions.GET_DATA,
                     payload: {
-                        data: data.data.data,
+                        data: data.data,
                     },
                 });
             })
             .catch((error) => {
-                console.log(error);
+                console.log('ERROR: '.error);
                 dispatch({
                     type: Actions.ERROR,
                     payload: {

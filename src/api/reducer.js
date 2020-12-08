@@ -2,20 +2,20 @@ import Actions from './actions';
 export const reducer = (state, action) => {
     switch (action.type) {
         case Actions.MAKE_REQUEST:
-            return {
-                data: false,
-                loading: true,
-            };
+            return Object.assign(state, { loading: true });
 
         case Actions.GET_DATA:
-            return { loading: false, data: action.payload.data, error: false };
+            return Object.assign({
+                loading: false,
+                data: action.payload.data,
+                error: false,
+            });
 
         case Actions.ERROR:
-            return {
-                data: false,
+            return Object.assign({
                 loading: false,
                 error: action.payload.error,
-            };
+            });
 
         default:
             return state;

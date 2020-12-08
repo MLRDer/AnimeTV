@@ -1,4 +1,4 @@
 import axios from 'axios';
-import { baseURL } from './constants';
+import baseURL from './constants';
 
-export default axios.create({ baseURL });
+export default axios.create({ baseURL: baseURL.baseURL });

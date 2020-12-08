@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     IconButton,
     Subheading,
@@ -24,7 +24,11 @@ const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const { data, loading, error } = useAnimes();
 
-    console.log(data);
+    console.log('******************');
+    console.log('LOADING: ', loading);
+    console.log('DATA: ', data.length);
+    console.log('ERROR: ', error);
+    console.log('DATA: ', data[0]);
 
     const [items] = useState([
         {
@@ -46,43 +50,59 @@ const Home = () => {
         },
     ]);
 
-    const [listItems, setListItems] = useState([
-        {
-            id: 1,
-            liked: false,
-            rating: 5.3,
-            title: 'Weathering with you',
-            key: 'weathering-with-you',
-            image:
-                'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-        },
-        {
-            id: 2,
-            liked: false,
-            rating: 7.7,
-            title: 'Dororo',
-            key: 'dororo',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-        },
-        {
-            id: 3,
-            liked: false,
-            rating: 9.5,
-            title: 'Your name',
-            key: 'your-name',
-            image:
-                'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
-        },
-        {
-            id: 4,
-            liked: false,
-            rating: 5.3,
-            title: 'Weathering with you',
-            key: 'weathering-with-you',
-            image:
-                'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-        },
-    ]);
+    // const [listItems, setListItems] = useState([
+    //     {
+    //         id: 1,
+    //         liked: false,
+    //         rating: 5.3,
+    //         title: 'Weathering with you',
+    //         key: 'weathering-with-you',
+    //         image:
+    //             'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
+    //     },
+    //     {
+    //         id: 2,
+    //         liked: false,
+    //         rating: 7.7,
+    //         title: 'Dororo',
+    //         key: 'dororo',
+    //         image: 'https://kg-portal.ru/img/73607/main.jpg',
+    //     },
+    //     {
+    //         id: 3,
+    //         liked: false,
+    //         rating: 9.5,
+    //         title: 'Your name',
+    //         key: 'your-name',
+    //         image:
+    //             'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
+    //     },
+    //     {
+    //         id: 4,
+    //         liked: false,
+    //         rating: 5.3,
+    //         title: 'Weathering with you',
+    //         key: 'weathering-with-you',
+    //         image:
+    //             'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
+    //     },
+    // ]);
+
+    const [listItems, setListItems] = useState([]);
+
+    useEffect(() => {
+        setListItems(
+            data.map((el, index) => ({
+                id: el.id,
+                liked: el.completed,
+                rating: index + 1,
+                title: el.title,
+                key: el.id,
+                image:
+                    'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
+            }))
+        );
+    }, [data]);
 
     const [visible, setVisible] = useState(false);
 
