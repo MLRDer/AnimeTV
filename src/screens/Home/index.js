@@ -1,140 +1,108 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
+    Appbar,
     IconButton,
     Subheading,
     Button,
     Dialog,
     Portal,
     Checkbox,
+    Text,
     List,
     Switch,
     ToggleButton,
 } from 'react-native-paper';
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
 import SwipableViewStack from '../../components/CardStack';
+import AdmobBanner from '../../components/AdmobBanner';
 import StackItem from '../../components/StackItem';
+import HomeEmptyState from '../../components/HomeEmptyState';
+import SectionListWithAd from '../../components/SectionListWithAd';
+import Anime from '../../api';
 import styles from './style';
-import SearchableAppbar from './../../components/SearchableAppbar';
-import GridList from './../../components/GridList';
-import useAnimes from '../../api/Animes';
+import _, { fill } from 'lodash';
 
-const Home = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const { data, loading, error } = useAnimes();
+const Home = ({ navigation }) => {
+    let sectionlist = null;
 
-    console.log('******************');
-    console.log('LOADING: ', loading);
-    console.log('DATA: ', data.length);
-    console.log('ERROR: ', error);
-    console.log('DATA: ', data[0]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [visible, setVisible] = useState(false);
+    const [initialCardIndex, setInitialCardIndex] = useState(0);
 
-    const [items] = useState([
-        {
-            title: 'Dororo',
-            key: 'dororo',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-        },
-        {
-            title: 'Your name',
-            key: 'your-name',
-            image:
-                'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
-        },
-        {
-            title: 'Weathering with you',
-            key: 'weathering-with-you',
-            image:
-                'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-        },
+    // *** FILTERS - START *** //
+    const [onlySerial, setOnlySerial] = useState(false);
+    const [videoQuality, setVideoQuality] = useState(null);
+    const [categories, setCategories] = useState([
+        { id: 1, label: 'Action', selected: false },
+        { id: 2, label: 'Comedy', selected: false },
+        { id: 3, label: 'Crime', selected: false },
+        { id: 4, label: 'Drama', selected: false },
+        { id: 5, label: 'Historical', selected: false },
+        { id: 6, label: 'Sci-Fi', selected: false },
+        { id: 7, label: 'Romance', selected: false },
     ]);
 
-    // const [listItems, setListItems] = useState([
-    //     {
-    //         id: 1,
-    //         liked: false,
-    //         rating: 5.3,
-    //         title: 'Weathering with you',
-    //         key: 'weathering-with-you',
-    //         image:
-    //             'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-    //     },
-    //     {
-    //         id: 2,
-    //         liked: false,
-    //         rating: 7.7,
-    //         title: 'Dororo',
-    //         key: 'dororo',
-    //         image: 'https://kg-portal.ru/img/73607/main.jpg',
-    //     },
-    //     {
-    //         id: 3,
-    //         liked: false,
-    //         rating: 9.5,
-    //         title: 'Your name',
-    //         key: 'your-name',
-    //         image:
-    //             'https://cdn.onebauer.media/one/empire-images/reviews_films/5829f535737b36a41846433e/Your%20Name.png?quality=50&width=1800&ratio=16-9&resizeStyle=aspectfill&format=jpg',
-    //     },
-    //     {
-    //         id: 4,
-    //         liked: false,
-    //         rating: 5.3,
-    //         title: 'Weathering with you',
-    //         key: 'weathering-with-you',
-    //         image:
-    //             'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-    //     },
-    // ]);
+    const filters = () => {
+        const filter = {
+            isSerial: onlySerial,
+            quality: videoQuality,
+            categories: categories
+                .filter((el) => el.selected)
+                .map((el) => el.label)
+                .join(','),
+        };
 
-    const [listItems, setListItems] = useState([]);
+        const options = {};
+
+        Object.keys(filter).map((key) => {
+            filter[key] && (options[key] = filter[key]);
+        });
+
+        console.log(options);
+
+        return options;
+    };
+    // *** FILTERS - END *** //
+
+    // *** API CALL SECTION - START *** //
+    const [animeState, setAnimeState] = useState({});
+    const [cardState, setCardState] = useState({});
+    const { data, loading, error } = animeState;
+    const { data: cards } = cardState;
+
+    const setAnimes = (d) => {
+        setAnimeState({ ...animeState, ...d });
+        setRefreshing(false);
+    };
+
+    const setCards = (d) => {
+        setCardState({ ...cardState, ...d });
+    };
+
+    const anime = new Anime(setAnimes, setCards);
 
     useEffect(() => {
-        setListItems(
-            data.map((el, index) => ({
-                id: el.id,
-                liked: el.completed,
-                rating: index + 1,
-                title: el.title,
-                key: el.id,
-                image:
-                    'https://www.film.ru/sites/default/files/movies/frames/46008190-1114518.jpg ',
-            }))
-        );
-    }, [data]);
+        anime.getAll(filters());
+        anime.getCardStack();
+    }, []);
 
-    const [visible, setVisible] = useState(false);
+    const refresh = () => {
+        anime.getAll(filters(), false);
+        setRefreshing(true);
+        anime.getCardStack(false);
+    };
+
+    const onRefresh = useCallback(refresh, [refreshing]);
+    // *** API CALL SECTION - END*** //
 
     const showDialog = () => setVisible(true);
 
     const hideDialog = () => setVisible(false);
 
-    const handleTermChange = (term) => setSearchTerm(term);
-
-    const handleAddFavourite = (id) => {
-        const updatedList = listItems.map((el) => {
-            if (el.id == id) {
-                el.liked = !el.liked;
-
-                // save to db
-            }
-
-            return el;
-        });
-
-        setListItems(updatedList);
-    };
-
-    const [categories, setCategories] = useState([
-        { id: 1, label: 'Male', selected: true },
-        { id: 2, label: 'Female', selected: false },
-        { id: 3, label: 'Others', selected: false },
-    ]);
-
     const handleSelectCategory = (id) => {
         const updatedList = categories.map((el) => {
-            if (el.id == id) {
+            if (el.id === id) {
                 el.selected = !el.selected;
             }
 
@@ -144,32 +112,60 @@ const Home = () => {
         setCategories(updatedList);
     };
 
-    const handleClear = () => {
+    const handleApplyFilters = () => {
+        anime.getAll(filters(), false);
         hideDialog();
-        const updatedList = categories.map((el) => {
-            el.selected = true;
-
-            return el;
-        });
-
-        setCategories(updatedList);
     };
 
-    const [videoQuality, setVideoQuality] = useState('480');
+    const handleClear = () => {
+        hideDialog();
 
-    return (
+        setCategories([
+            { id: 1, label: 'Action', selected: false },
+            { id: 2, label: 'Comedy', selected: false },
+            { id: 3, label: 'Crime', selected: false },
+            { id: 4, label: 'Drama', selected: false },
+            { id: 5, label: 'Historical', selected: false },
+            { id: 6, label: 'Sci-Fi', selected: false },
+            { id: 7, label: 'Romance', selected: false },
+        ]);
+
+        setVideoQuality(null);
+        setOnlySerial(false);
+
+        anime.getAll({}, false);
+    };
+
+    const scrollToTop = () => {
+        sectionlist &&
+            sectionlist.scrollToLocation({
+                animated: true,
+                sectionIndex: 0,
+                itemIndex: 0,
+                viewOffset: 500,
+            });
+    };
+
+    const handleSelect = (item) => {
+        navigation.navigate('Details', item);
+    };
+
+    const ListHeaderComponent = () => (
         <>
-            <StatusBar />
-            <SearchableAppbar value={searchTerm} onChange={handleTermChange} />
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.container}>
+            {cards && cards.length ? (
+                <View style={styles.container} key="CardStack">
                     <SwipableViewStack
-                        data={items}
+                        initialSelectedIndex={initialCardIndex}
+                        onSwipe={setInitialCardIndex}
+                        data={cards}
                         renderItem={(element) => <StackItem {...element} />}
-                        onItemClicked={(element) => console.log(element.title)}
+                        onItemClicked={(element) => handleSelect(element)}
                         stackSpacing={-20}
                     />
                 </View>
+            ) : null}
+
+            {!(!(data && data.length) && !(cards && cards.length)) ? (
                 <View style={styles.heading}>
                     <Subheading style={styles.headingText}>Animes</Subheading>
                     <IconButton
@@ -178,125 +174,170 @@ const Home = () => {
                         onPress={showDialog}
                     />
                 </View>
-                <GridList
-                    data={listItems}
-                    handleAddFavourite={handleAddFavourite}
+            ) : null}
+        </>
+    );
+
+    return (
+        <>
+            <StatusBar />
+            <Appbar.Header>
+                <Appbar.Content title="AnimeTV" onPress={scrollToTop} />
+            </Appbar.Header>
+
+            <SectionListWithAd
+                handleSelect={handleSelect}
+                reference={(component) => {
+                    sectionlist = component;
+                }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
+                ListHeaderComponent={<ListHeaderComponent />}
+                sections={data}
+                SectionFooterComponent={() => <AdmobBanner key="ad" />}
+            />
+
+            {!(data && data.length) && !loading && (
+                <HomeEmptyState
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                        />
+                    }
+                    refresh={() => {
+                        handleClear();
+                        setRefreshing(true);
+                    }}
                 />
+            )}
 
-                <Portal>
-                    <Dialog
-                        visible={visible}
-                        onDismiss={hideDialog}
-                        style={{ maxHeight: '70%' }}
-                    >
-                        <Dialog.Title>Filter</Dialog.Title>
-                        <Dialog.Content>
-                            <List.Section>
-                                <List.Item
-                                    style={{
-                                        paddingHorizontal: 0,
+            <Portal>
+                <Dialog
+                    visible={visible}
+                    onDismiss={hideDialog}
+                    style={{ maxHeight: '70%' }}
+                >
+                    <Dialog.Title>Filter</Dialog.Title>
+                    <Dialog.Content>
+                        <List.Section>
+                            <List.Item
+                                style={{
+                                    paddingHorizontal: 0,
+                                }}
+                                title="Only series"
+                                right={() => (
+                                    <Switch
+                                        value={onlySerial}
+                                        onValueChange={setOnlySerial}
+                                    />
+                                )}
+                            />
+                            <List.Accordion
+                                theme={{ colors: { primary: '#333' } }}
+                                style={{
+                                    paddingHorizontal: 0,
+                                }}
+                                title="Categories"
+                            >
+                                <ScrollView style={{ maxHeight: 200 }}>
+                                    {categories.map((category, index) => {
+                                        return (
+                                            <List.Item
+                                                key={index}
+                                                onPress={() =>
+                                                    handleSelectCategory(
+                                                        category.id
+                                                    )
+                                                }
+                                                style={{
+                                                    paddingVertical: 2,
+                                                }}
+                                                title={category.label}
+                                                right={() => (
+                                                    <Checkbox
+                                                        status={
+                                                            category.selected
+                                                                ? 'checked'
+                                                                : 'unchecked'
+                                                        }
+                                                        onPress={() =>
+                                                            handleSelectCategory(
+                                                                category.id
+                                                            )
+                                                        }
+                                                    />
+                                                )}
+                                            />
+                                        );
+                                    })}
+                                </ScrollView>
+                            </List.Accordion>
+
+                            <List.Item
+                                style={{
+                                    paddingHorizontal: 0,
+                                }}
+                                title="Quality"
+                            />
+
+                            <ToggleButton.Row
+                                style={{
+                                    flex: 1,
+                                    paddingHorizontal: 16,
+                                    marginBottom: 24,
+                                }}
+                                onValueChange={(value) => {
+                                    setVideoQuality(value);
+                                }}
+                                value={videoQuality}
+                            >
+                                <ToggleButton
+                                    style={{ flex: 1 }}
+                                    icon={() => {
+                                        return <Text>480</Text>;
                                     }}
-                                    title="First Item"
-                                    right={() => <Switch value={true} />}
+                                    value={480}
                                 />
-                                <List.Accordion
-                                    theme={{ colors: { primary: '#333' } }}
-                                    style={{
-                                        paddingHorizontal: 0,
+                                <ToggleButton
+                                    style={{ flex: 1 }}
+                                    icon={() => {
+                                        return <Text>720</Text>;
                                     }}
-                                    title="Categories"
-                                >
-                                    <ScrollView style={{ maxHeight: 200 }}>
-                                        {categories.map((category, index) => {
-                                            return (
-                                                <List.Item
-                                                    onPress={() =>
-                                                        handleSelectCategory(
-                                                            category.id
-                                                        )
-                                                    }
-                                                    style={{
-                                                        paddingVertical: 2,
-                                                    }}
-                                                    title={category.label}
-                                                    right={() => (
-                                                        <Checkbox
-                                                            status={
-                                                                category.selected
-                                                                    ? 'checked'
-                                                                    : 'unchecked'
-                                                            }
-                                                            onPress={() =>
-                                                                handleSelectCategory(
-                                                                    category.id
-                                                                )
-                                                            }
-                                                        />
-                                                    )}
-                                                />
-                                            );
-                                        })}
-                                    </ScrollView>
-                                </List.Accordion>
-
-                                <ToggleButton.Row
-                                    style={{
-                                        flex: 1,
-                                        marginTop: 12,
-                                        marginBottom: 24,
+                                    value={720}
+                                />
+                                <ToggleButton
+                                    style={{ flex: 1 }}
+                                    icon={() => {
+                                        return <Text>1080</Text>;
                                     }}
-                                    value="left"
-                                    onValueChange={(value) => {
-                                        console.log(value);
-                                        setVideoQuality(value);
-                                    }}
-                                    value={videoQuality}
-                                >
-                                    <ToggleButton
-                                        style={{ flex: 1 }}
-                                        icon={() => {
-                                            return <Text>480</Text>;
-                                        }}
-                                        value="480"
-                                    />
-                                    <ToggleButton
-                                        style={{ flex: 1 }}
-                                        icon={() => {
-                                            return <Text>720</Text>;
-                                        }}
-                                        value="720"
-                                    />
-                                    <ToggleButton
-                                        style={{ flex: 1 }}
-                                        icon={() => {
-                                            return <Text>1080</Text>;
-                                        }}
-                                        value="1080"
-                                    />
-                                </ToggleButton.Row>
-                            </List.Section>
-                        </Dialog.Content>
-                        <Dialog.Actions
-                            style={{ justifyContent: 'space-between' }}
+                                    value={1080}
+                                />
+                            </ToggleButton.Row>
+                        </List.Section>
+                    </Dialog.Content>
+                    <Dialog.Actions style={{ justifyContent: 'space-between' }}>
+                        <Button
+                            color="#333"
+                            onPress={handleClear}
+                            style={{ elevation: 0 }}
                         >
-                            <Button
-                                color="#333"
-                                onPress={handleClear}
-                                style={{ elevation: 0 }}
-                            >
-                                Clear
-                            </Button>
-                            <Button
-                                color="#333"
-                                onPress={hideDialog}
-                                style={{ elevation: 0 }}
-                            >
-                                Apply
-                            </Button>
-                        </Dialog.Actions>
-                    </Dialog>
-                </Portal>
-            </ScrollView>
+                            Clear
+                        </Button>
+                        <Button
+                            color="#333"
+                            onPress={handleApplyFilters}
+                            style={{ elevation: 0 }}
+                        >
+                            Apply
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </>
     );
 };

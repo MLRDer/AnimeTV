@@ -50,17 +50,7 @@ export default function App() {
     ) : (
         <PaperProvider
             settings={{
-                icon: (props) => {
-                    if (props.direction === true) {
-                        return (
-                            <IconlyBold {...props} style={{ fontSize: 24 }} />
-                        );
-                    }
-
-                    return (
-                        <IconlyBroken {...props} style={{ marginTop: 1.5 }} />
-                    );
-                },
+                icon: (props) => (<IconlyBroken {...props} style={{ marginTop: 2 }} />)
             }}
             theme={theme}
         >

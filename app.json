@@ -2,7 +2,7 @@
   "expo": {
     "name": "AnimePro",
     "slug": "AnimePro",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -23,7 +23,12 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.nurikjohn.AnimePro",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3813010680847679~6518219426"
+      },
+      "permissions": []
     },
     "androidNavigationBar": {
       "backgroundColor": "#000000"

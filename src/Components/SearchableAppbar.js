@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Appbar, Searchbar, IconButton } from 'react-native-paper';
 import { StyleSheet, Keyboard } from 'react-native';
 
-const SearchableAppbar = ({ value, onChange, placeholder = 'Search' }) => {
+const SearchableAppbar = ({
+    value,
+    onChange,
+    onHeaderPress,
+    placeholder = 'Search',
+}) => {
     const [showSearch, setShowSearch] = useState(false);
 
     useEffect(() => {
@@ -43,7 +48,7 @@ const SearchableAppbar = ({ value, onChange, placeholder = 'Search' }) => {
         </Appbar.Header>
     ) : (
         <Appbar.Header>
-            <Appbar.Content title="AnimeTV" />
+            <Appbar.Content title="AnimeTV" onPress={onHeaderPress} />
             <Appbar.Action
                 icon="search"
                 rippleColor="#afafaf"

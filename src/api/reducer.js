@@ -1,5 +1,6 @@
 import Actions from './actions';
-export const reducer = (state, action) => {
+
+export default (state, action) => {
     switch (action.type) {
         case Actions.MAKE_REQUEST:
             return Object.assign(state, { loading: true });

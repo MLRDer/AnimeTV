@@ -33,60 +33,6 @@ const Downloads = ({ navigation }) => {
             progress: 29,
             downloading: true,
         },
-        {
-            name: 'Anime name',
-            key: '123',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
-        {
-            name: 'Anime name',
-            key: '123456',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
-        {
-            name: 'Anime name',
-            key: '123456789',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
-        {
-            name: 'Anime name',
-            key: '123',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
-        {
-            name: 'Anime name',
-            key: '123456',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
-        {
-            name: 'Anime name',
-            key: '123456789',
-            image: 'https://kg-portal.ru/img/73607/main.jpg',
-            episode: 'Episode name',
-            size: 432,
-            progress: 29,
-            downloading: true,
-        },
     ];
 
     return (
@@ -97,15 +43,7 @@ const Downloads = ({ navigation }) => {
                 <Appbar.Action
                     icon="setting"
                     rippleColor="#afafaf"
-                    onPress={() =>
-                        navigation.navigate('Player', {
-                            title: 'Tenet 2020!',
-                            source:
-                                'http://dl.mellimovies.com/Movie_EN/99/6/Tenet.2020/Tenet.2020.480p.HDRip.mkv',
-                            poster:
-                                'https://www.slashgear.com/wp-content/uploads/2019/12/Tenet-screenshot-1280x720.jpg',
-                        })
-                    }
+                    onPress={() => {}}
                 />
             </Appbar.Header>
 

@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
         borderColor: 'red',
         borderRadius: 4,
         overflow: 'hidden',
-        backgroundColor: '#999',
+        backgroundColor: '#fff',
     },
     imageBackground: { width: '100%', height: '100%' },
     linearGradient: {

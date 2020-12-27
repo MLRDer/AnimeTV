@@ -1,74 +1,71 @@
-import React, { useState } from 'react';
-import { Text, IconButton } from 'react-native-paper';
-import { View, ImageBackground, StyleSheet } from 'react-native';
+import React, { Component } from 'react';
+import { Text } from 'react-native-paper';
+import {
+    View,
+    ImageBackground,
+    StyleSheet,
+    TouchableWithoutFeedback,
+    Dimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const StarIcon = ({ liked, onPress }) => {
-    return (
-        <IconButton
-            icon={
-                liked
-                    ? {
-                          source: 'star',
-                          direction: liked,
-                      }
-                    : 'star'
-            }
-            style={{
-                position: 'absolute',
-                right: 2,
-                top: 2,
-                zIndex: 10,
-            }}
-            rippleColor="transparent"
-            color={liked ? '#F1C40F' : '#fff'}
-            onPress={onPress}
-        />
-    );
-};
+const { width } = Dimensions.get('window');
 
-const FlatlistItem = ({
-    title,
-    image,
-    rating,
-    liked,
-    handleAddFavourite,
-    id,
-}) => {
-    return (
-        <View style={{ width: '50%' }}>
-            <Text
-                style={[
-                    styles.rateBadge,
-                    {
-                        backgroundColor:
-                            rating >= 7
-                                ? '#2ecc71'
-                                : rating < 3
-                                ? '#E74C3C'
-                                : '#7f8c8d',
-                    },
-                ]}
+const itemWidth = (width - 16) / 2;
+const itemHeight = itemWidth * 1.5;
+
+class FlatlistItem extends Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <TouchableWithoutFeedback
+                key={this.props._id}
+                onPress={() => this.props.onPress(this.props)}
             >
-                {rating}
-            </Text>
-            <StarIcon liked={liked} onPress={() => handleAddFavourite(id)} />
-            <View style={styles.container}>
-                <ImageBackground
-                    source={{ uri: image }}
-                    style={styles.imageBackground}
+                <View
+                    style={{
+                        width: itemWidth,
+                        height: itemHeight,
+                    }}
                 >
-                    <LinearGradient
-                        colors={['transparent', '#34495eef']}
-                        style={styles.linearGradient}
+                    <Text
+                        style={[
+                            styles.rateBadge,
+                            {
+                                backgroundColor:
+                                    this.props.rating >= 7
+                                        ? '#2ecc71'
+                                        : this.props.rating < 3
+                                        ? '#E74C3C'
+                                        : '#7f8c8d',
+                            },
+                        ]}
                     >
-                        <Text style={styles.title}>{title}</Text>
-                    </LinearGradient>
-                </ImageBackground>
-            </View>
-        </View>
-    );
-};
+                        {this.props.rating}
+                    </Text>
+                    <View style={styles.container}>
+                        <ImageBackground
+                            source={{ uri: this.props.poster }}
+                            style={styles.imageBackground}
+                        >
+                            <LinearGradient
+                                colors={['transparent', '#34495eef']}
+                                style={styles.linearGradient}
+                            >
+                                <Text style={styles.title}>
+                                    {this.props.title}
+                                </Text>
+                            </LinearGradient>
+                        </ImageBackground>
+                    </View>
+                </View>
+            </TouchableWithoutFeedback>
+        );
+    }
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -106,6 +103,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 16,
         left: 0,
+        zIndex: 10,
+        borderRadius: 2,
+        fontSize: 12,
+    },
+    qualityBadge: {
+        color: '#fff',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        position: 'absolute',
+        top: 16,
+        right: 0,
         zIndex: 10,
         borderRadius: 2,
         fontSize: 12,

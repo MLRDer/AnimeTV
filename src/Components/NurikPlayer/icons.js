@@ -56,18 +56,18 @@ export const FullscreenEnterIcon = () => (
     <FontAwesome5
         fadeDuration={0}
         name="expand"
-        size={24}
+        size={20}
         color={ICON_COLOR}
-        style={style.iconStyle}
+        style={[style.iconStyle, { marginTop: 2 }]}
     />
 );
 export const FullscreenExitIcon = () => (
     <FontAwesome5
         fadeDuration={0}
         name="compress"
-        size={24}
+        size={20}
         color={ICON_COLOR}
-        style={style.iconStyle}
+        style={[style.iconStyle, { marginTop: 2 }]}
     />
 );
 export const ReplayIcon = () => (

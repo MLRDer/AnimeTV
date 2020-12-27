@@ -8,7 +8,14 @@ import {
     StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Appbar, IconButton } from 'react-native-paper';
+import {
+    Appbar,
+    Button,
+    Divider,
+    IconButton,
+    Menu,
+    Provider,
+} from 'react-native-paper';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import Slider from '@react-native-community/slider';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -24,6 +31,8 @@ import {
     ReplayIcon,
     Spinner,
 } from './icons';
+
+import FullScreenIcon from './FullScreenIcon';
 
 // UI states
 var ControlStates;
@@ -172,6 +181,7 @@ const VideoPlayer = ({
     let shouldPlayAtEndOfSeek = true;
     let controlsTimer = null;
     const { isConnected } = useNetInfo();
+
     const [playbackState, setPlaybackState] = useState(PlaybackStates.Loading);
     const [lastPlaybackStateUpdate, setLastPlaybackStateUpdate] = useState(
         Date.now()
@@ -430,7 +440,7 @@ const VideoPlayer = ({
                 }}
                 resizeMode="contain"
                 usePoster={true}
-                shouldPlay={true}
+                shouldPlay={false}
             />
 
             <View style={styles.mainContainer}>
@@ -484,7 +494,8 @@ const VideoPlayer = ({
                                             ScreenOrientation.OrientationLock
                                                 .PORTRAIT
                                         );
-                                        navigation.navigate('BottomNavigation');
+                                        togglePlay();
+                                        navigation.goBack();
                                     }}
                                 />
                                 <Appbar.Content
@@ -493,12 +504,9 @@ const VideoPlayer = ({
                                 />
 
                                 <Appbar.Action
-                                    icon={() => {
-                                        console.log(landscape);
-                                        if (landscape)
-                                            return <VideoFullscreenExitIcon />;
-                                        return <VideoFullscreenEnterIcon />;
-                                    }}
+                                    icon={() => (
+                                        <FullScreenIcon landscape={landscape} />
+                                    )}
                                     rippleColor="#fff"
                                     color="#fff"
                                     onPress={() => {
@@ -607,7 +615,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     appbarHeader: { backgroundColor: 'transparent' },
-    appbarText: { color: '#fff' },
+    appbarText: { color: '#fff', marginLeft: -16 },
     textStyle: {
         color: '#FFF',
         fontSize: 12,

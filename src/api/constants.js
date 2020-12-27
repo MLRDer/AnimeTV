@@ -1,3 +1,3 @@
 export default {
-    baseURL: 'https://jsonplaceholder.typicode.com/',
+    baseURL: 'https://anime.muhammadjanov.uz/api/',
 };

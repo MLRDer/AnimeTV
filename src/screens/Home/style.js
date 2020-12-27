@@ -5,6 +5,7 @@ export default StyleSheet.create({
         width: '100%',
         marginBottom: 48,
         zIndex: 100,
+        marginTop: -8,
     },
     heading: {
         paddingHorizontal: 16,
