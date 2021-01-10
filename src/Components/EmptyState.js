@@ -1,8 +1,9 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, Image, Dimensions } from 'react-native';
-import { Subheading, Button } from 'react-native-paper';
+import { Subheading, Button, withTheme } from 'react-native-paper';
+const { width } = Dimensions.get('window');
 
-const HomeEmptyState = ({ refresh }) => {
+const EmptyState = ({ refresh, text, theme }) => {
     return (
         <View style={styles.container}>
             <View
@@ -18,15 +19,19 @@ const HomeEmptyState = ({ refresh }) => {
                     fadeDuration={0}
                     style={styles.image}
                 />
-                <Subheading>{'Oops.. No animes were found'}</Subheading>
+                <Subheading>{text}</Subheading>
                 <Button
                     onPress={refresh}
-                    style={styles.button}
-                    rippleColor="red"
+                    style={[
+                        styles.button,
+                        {
+                            borderColor: theme.colors.accent,
+                        },
+                    ]}
                     color="#ecf0f1"
                     mode="contained"
                 >
-                    Reset filters
+                    Refresh
                 </Button>
             </View>
         </View>
@@ -40,9 +45,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     image: {
-        width: 100,
-        height: 100,
-        marginBottom: 16,
+        width: width / 3,
+        height: width / 3,
+        marginBottom: 24,
         transform: [
             {
                 rotate: '-12deg',
@@ -52,8 +57,7 @@ const styles = StyleSheet.create({
     button: {
         marginTop: 16,
         elevation: 0,
-        borderColor: '#2c3e50',
     },
 });
 
-export default HomeEmptyState;
+export default withTheme(EmptyState);

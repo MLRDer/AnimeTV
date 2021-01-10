@@ -1,17 +1,24 @@
 import React from 'react';
-import { Text } from 'react-native-paper';
+import { Text, withTheme } from 'react-native-paper';
 import { View, ImageBackground, Dimensions, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const StackItem = ({ title, image }) => {
+const StackItem = ({ title, image, theme }) => {
     return (
-        <View style={styles.container}>
+        <View
+            style={[
+                styles.container,
+                {
+                    backgroundColor: theme.colors.background,
+                },
+            ]}
+        >
             <ImageBackground
                 source={{ uri: image }}
                 style={styles.imageBackground}
             >
                 <LinearGradient
-                    colors={['transparent', '#34495eef']}
+                    colors={['transparent', theme.colors.accent]}
                     style={styles.linearGradient}
                 >
                     <Text style={styles.title}>{title}</Text>
@@ -26,11 +33,10 @@ const { width } = Dimensions.get('screen');
 const styles = StyleSheet.create({
     container: {
         width: width - 24,
-        height: 240,
+        height: (width - 24) / 1.7,
         borderColor: 'red',
         borderRadius: 4,
         overflow: 'hidden',
-        backgroundColor: '#fff',
     },
     imageBackground: { width: '100%', height: '100%' },
     linearGradient: {
@@ -51,4 +57,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default StackItem;
+export default withTheme(StackItem);

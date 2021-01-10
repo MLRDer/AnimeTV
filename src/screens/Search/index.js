@@ -4,22 +4,30 @@ import {
     IconButton,
     Searchbar,
     ActivityIndicator,
+    withTheme,
 } from 'react-native-paper';
-import { StyleSheet, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, ScrollView, Keyboard, View } from 'react-native';
 import AdmobBanner from '../../components/AdmobBanner';
-import AdmobBannerLarge from '../../components/AdmobBannerLarge';
-
-import SectionListWithAd from '../../components/SectionListWithAd';
+import ContentsSectionList from '../../components/ContentsSectionList';
+import WatchLoadingState from '../../components/WatchLoadingState';
 import Anime from '../../api';
+import Axios from 'axios';
 
-const Search = ({ navigation }) => {
+const Search = ({ navigation, theme }) => {
+    const source = Axios.CancelToken.source();
     let sectionlist = null;
 
+    const [visible, setVisible] = useState(true);
     const [value, setValue] = useState('');
     const [apiState, setApiState] = useState({});
 
     const { data, loading, error } = apiState;
+
+    const setResults = (d) => {
+        setApiState({ ...apiState, ...d });
+    };
+
+    const anime = new Anime(setResults, source);
 
     useEffect(() => {
         if (value && value.length) {
@@ -27,16 +35,30 @@ const Search = ({ navigation }) => {
         } else {
             setResults({ data: null });
         }
+
+        // cleanup function
+        return () => {
+            source.cancel();
+        };
     }, [value]);
 
-    const setResults = (d) => {
-        setApiState({ ...apiState, ...d });
-    };
+    useEffect(() => {
+        Keyboard.addListener('keyboardDidShow', keyboardOpened);
+        Keyboard.addListener('keyboardDidHide', keyboardClosed);
 
-    const anime = new Anime(setResults);
+        // cleanup function
+        return () => {
+            Keyboard.removeListener('keyboardDidShow');
+            Keyboard.removeListener('keyboardDidHide');
+        };
+    }, []);
+
+    const keyboardOpened = () => setVisible(false);
+
+    const keyboardClosed = () => setVisible(true);
 
     const handleSelect = (item) => {
-        navigation.navigate('Details', item);
+        navigation.navigate('Details', { id: item._id });
     };
 
     const scrollToTop = () => {
@@ -51,9 +73,17 @@ const Search = ({ navigation }) => {
 
     return (
         <>
-            <StatusBar style="dark" />
-            <Appbar.Header>
+            <Appbar.Header
+                style={{
+                    backgroundColor: theme.colors.surface,
+                }}
+            >
                 <Appbar.Content title="Search" onPress={scrollToTop} />
+                <Appbar.Action
+                    icon="setting"
+                    rippleColor="#afafaf"
+                    onPress={() => navigation.navigate('Settings')}
+                />
             </Appbar.Header>
 
             <Searchbar
@@ -64,9 +94,9 @@ const Search = ({ navigation }) => {
                 placeholder={'Search'}
                 icon={() =>
                     loading ? (
-                        <ActivityIndicator color="#333" />
+                        <ActivityIndicator color={theme.colors.text} />
                     ) : (
-                        <IconButton rippleColor="#afafaf" icon="search" />
+                        <IconButton icon="search" />
                     )
                 }
                 clearIcon={() =>
@@ -86,31 +116,49 @@ const Search = ({ navigation }) => {
                 }}
             />
 
+            <WatchLoadingState loading={loading} />
+
             {data && data.length ? (
-                <SectionListWithAd
-                    handleSelect={handleSelect}
-                    reference={(component) => {
-                        sectionlist = component;
-                    }}
-                    sections={data}
-                    SectionFooterComponent={() => <AdmobBanner />}
-                />
-            ) : (
-                <View
-                    style={{
-                        flex: 1,
-                        justifyContent: 'flex-end',
-                        paddingBottom: 4,
-                    }}
-                >
-                    <AdmobBannerLarge />
-                </View>
-            )}
+                <>
+                    <ContentsSectionList
+                        handleSelect={handleSelect}
+                        reference={(component) => {
+                            sectionlist = component;
+                        }}
+                        containerStyle={{
+                            paddingBottom: 116,
+                        }}
+                        sections={data}
+                        showAd={false}
+                    />
+
+                    {visible ? (
+                        <View
+                            style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                padding: 8,
+                                paddingBottom: 0,
+                            }}
+                        >
+                            <AdmobBanner />
+                        </View>
+                    ) : null}
+                </>
+            ) : visible ? (
+                <ScrollView style={styles.largeAdContainer}>
+                    <AdmobBanner large />
+                </ScrollView>
+            ) : null}
         </>
     );
 };
 
 const styles = StyleSheet.create({
+    largeAdContainer: {
+        paddingBottom: 8,
+        paddingHorizontal: 8,
+    },
     searchBar: {
         elevation: 0,
         borderWidth: 0,
@@ -121,4 +169,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Search;
+export default withTheme(Search);

@@ -1,14 +1,23 @@
 import React from 'react';
-import { StyleSheet, SectionList, View, Dimensions } from 'react-native';
+import {
+    StyleSheet,
+    SectionList,
+    View,
+    Dimensions,
+    Animated,
+} from 'react-native';
 import FlatlistItem from './FlatlistItem';
+import AdmobBanner from './AdmobBanner';
 
-const HomeEmptyState = ({
+const ContentsSectionList = ({
     sections,
     refreshControl,
     reference,
     ListHeaderComponent,
-    SectionFooterComponent,
     handleSelect,
+    onScroll,
+    containerStyle,
+    showAd = true,
 }) => {
     const { width } = Dimensions.get('window');
 
@@ -31,6 +40,7 @@ const HomeEmptyState = ({
 
             items.push(
                 <FlatlistItem
+                    key={item._id}
                     width={itemWidth}
                     height={itemHeight}
                     _id={item._id}
@@ -52,19 +62,22 @@ const HomeEmptyState = ({
 
     return (
         <SectionList
+            onScroll={onScroll}
             ref={reference}
             refreshControl={refreshControl}
             ListHeaderComponent={ListHeaderComponent}
             maxToRenderPerBatch={5}
             initialNumToRender={5}
-            windowSize={11}
+            windowSize={8}
             sections={sections}
             style={{ flexGrow: 0 }}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.container}
+            contentContainerStyle={[styles.container, containerStyle]}
             keyExtractor={(item, index) => item._id + index}
             renderItem={renderItem}
-            renderSectionFooter={SectionFooterComponent}
+            renderSectionFooter={() =>
+                showAd ? <AdmobBanner key="ad" /> : null
+            }
         />
     );
 };
@@ -72,11 +85,10 @@ const HomeEmptyState = ({
 const styles = StyleSheet.create({
     container: {
         padding: 8,
-        paddingTop: 0,
     },
     row: {
         flexDirection: 'row',
     },
 });
 
-export default HomeEmptyState;
+export default ContentsSectionList;

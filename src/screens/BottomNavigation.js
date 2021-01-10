@@ -1,28 +1,46 @@
 import React, { useState } from 'react';
-import { BottomNavigation } from 'react-native-paper';
+import { BottomNavigation, withTheme } from 'react-native-paper';
 import Home from './Home';
-import Favourites from './Favourites';
-import Downloads from './Downloads';
+import Watch from './Watch';
 import Search from './Search';
+import Downloads from './Downloads';
 import Profile from './Profile';
 
 const routes = [
     { key: 'home', title: 'Home', icon: 'home' },
+    { key: 'watch', title: 'Watch', icon: 'play' },
     { key: 'search', title: 'Search', icon: 'search' },
-    { key: 'profile', title: 'Profile', icon: 'profile' },
 ];
 
-const Bottom = ({ navigation }) => {
+const Bottom = ({ navigation, route: initalRoute, theme }) => {
     const [index, setIndex] = useState(0);
 
     const renderScene = ({ route, jumpTo }) => {
         switch (route.key) {
             case 'home':
-                return <Home navigation={navigation} jumpTo={jumpTo} />;
+                return (
+                    <Home
+                        navigation={navigation}
+                        route={initalRoute}
+                        jumpTo={jumpTo}
+                    />
+                );
             case 'search':
-                return <Search navigation={navigation} jumpTo={jumpTo} />;
-            case 'profile':
-                return <Profile navigation={navigation} jumpTo={jumpTo} />;
+                return (
+                    <Search
+                        navigation={navigation}
+                        route={initalRoute}
+                        jumpTo={jumpTo}
+                    />
+                );
+            case 'watch':
+                return (
+                    <Watch
+                        navigation={navigation}
+                        route={initalRoute}
+                        jumpTo={jumpTo}
+                    />
+                );
         }
     };
 
@@ -33,9 +51,12 @@ const Bottom = ({ navigation }) => {
                 onIndexChange={setIndex}
                 renderScene={renderScene}
                 shifting
+                barStyle={{
+                    backgroundColor: theme.colors.surface,
+                }}
             />
         </>
     );
 };
 
-export default Bottom;
+export default withTheme(Bottom);

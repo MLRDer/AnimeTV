@@ -1,3 +1,4 @@
+import { times } from 'lodash';
 import React, { PureComponent } from 'react';
 import { View, PanResponder, Animated, Dimensions } from 'react-native';
 
@@ -20,15 +21,13 @@ const HORIZONTAL_SWIPE_THRESHOLD = 40;
 const SCROLL_DISABLE_THRESHOLD = 5;
 const CLICK_THRESHOLD = 10;
 const SWIPE_ANIM_DURATION = 300;
+const AUTO_SWIPE_DURATION = 5000;
 
-class SwipeableViewStack extends PureComponent<
-    SwipeableViewStackProps,
-    SwipeableViewStackState
-> {
-    state: SwipeableViewStackState;
-    props: SwipeableViewStackProps;
-    viewPanResponder: Object;
-    dataArray: Array<Object>;
+class SwipeableViewStack extends PureComponent {
+    state;
+    props;
+    viewPanResponder;
+    dataArray;
 
     static defaultProps = {
         initialSelectedIndex: 0,
@@ -36,17 +35,17 @@ class SwipeableViewStack extends PureComponent<
         stackSpacing: 20,
     };
 
-    constructor(props: Object) {
+    constructor(props) {
         super(props);
 
         this.state = {
             viewPan: new Animated.ValueXY(),
             viewStackedAnim: new Animated.Value(0),
-            currentStackedViewIndex: props.initialSelectedIndex
-                ? props.initialSelectedIndex
-                : 0,
+            currentStackedViewIndex: 0,
+            direction: 1,
         };
 
+        this.intervalId = null;
         this.dataArray = props.data;
         this.createviewPanResponder = this.createviewPanResponder.bind(this);
         this.renderSwipeableViews = this.renderSwipeableViews.bind(this);
@@ -55,14 +54,60 @@ class SwipeableViewStack extends PureComponent<
         this.createviewPanResponder();
     }
 
-    onItemClicked: Function;
+    componentDidMount() {
+        this.startInterval();
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.intervalId);
+    }
+
+    startInterval() {
+        this.intervalId = setInterval(() => {
+            Animated.timing(this.state.viewPan, {
+                toValue: this.state.direction * 80,
+                duration: SWIPE_ANIM_DURATION,
+                useNativeDriver: false,
+            }).start(() => {
+                this.setState({
+                    direction: this.state.direction * -1,
+                });
+
+                Animated.timing(this.state.viewPan, {
+                    toValue: 0,
+                    duration: SWIPE_ANIM_DURATION,
+                    useNativeDriver: false,
+                }).start();
+                Animated.timing(this.state.viewStackedAnim, {
+                    toValue: 1,
+                    duration: SWIPE_ANIM_DURATION,
+                    useNativeDriver: false,
+                }).start(() => {
+                    this.state.viewStackedAnim.setValue(0);
+
+                    this.setState({
+                        currentStackedViewIndex:
+                            this.state.currentStackedViewIndex ===
+                            this.dataArray.length - 1
+                                ? 0
+                                : this.state.currentStackedViewIndex + 1,
+                    });
+                });
+            });
+        }, AUTO_SWIPE_DURATION);
+    }
+
+    restartInterval() {
+        clearInterval(this.intervalId);
+        this.startInterval();
+    }
+
     onItemClicked() {
         this.props.onItemClicked(
             this.dataArray[this.state.currentStackedViewIndex]
         );
     }
 
-    createviewPanResponder: Function;
     createviewPanResponder() {
         this.viewPanResponder = PanResponder.create({
             onStartShouldSetPanResponder: () => true,
@@ -293,7 +338,6 @@ class SwipeableViewStack extends PureComponent<
         );
     }
 
-    renderSwipeableViews: Function;
     renderSwipeableViews() {
         const { stackSpacing } = this.props;
         return (
@@ -401,7 +445,7 @@ class SwipeableViewStack extends PureComponent<
         );
     }
 
-    getFrontmostViewTransformation(isDummy: boolean) {
+    getFrontmostViewTransformation(isDummy) {
         const { stackSpacing } = this.props;
 
         if (this.props.data.length === 2) {

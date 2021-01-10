@@ -5,50 +5,73 @@ import {
     Image,
     ImageBackground,
     ScrollView,
+    Dimensions,
+    Share,
 } from 'react-native';
-import {
-    Appbar,
-    Text,
-    Button,
-    Portal,
-    Modal,
-    Subheading,
-} from 'react-native-paper';
 import {
     ActionSheetProvider,
     connectActionSheet,
     useActionSheet,
 } from '@expo/react-native-action-sheet';
-import RatingStars from '../../components/RatingStars';
-import Anime from '../../api';
-import { StatusBar } from 'expo-status-bar';
+import { Appbar, Text, Button, withTheme } from 'react-native-paper';
 import { useNetInfo } from '@react-native-community/netinfo';
+import RatingStars from '../../components/RatingStars';
+import NoConnection from '../../components/NoConnection';
+import AdmobBanner from '../../components/AdmobBanner';
+import DetailsLoadingState from '../../components/DetailsLoadingState';
+import Anime from '../../api';
+import Axios from 'axios';
 
-const Details = ({ navigation }) => {
+const { width } = Dimensions.get('window');
+
+const onShare = async (id) => {
+    try {
+        await Share.share(
+            {
+                message: `https://cassette.muhammadjanov.uz/movie/${id}`,
+            },
+            { dialogTitle: 'Cassette 📼' }
+        );
+    } catch (error) {
+        alert(error.message);
+    }
+};
+
+const Details = ({ navigation, route, theme }) => {
+    const source = Axios.CancelToken.source();
+
+    const id = route.params.id;
+
     const { isConnected } = useNetInfo();
 
-    const item = navigation.state.params;
     const { showActionSheetWithOptions } = useActionSheet();
-    const [apiState, setApiState] = useState({});
+    const [details, setDetails] = useState({});
 
-    const { data, loading, error } = apiState;
+    const { data, loading, error } = details;
 
-    const setEpisodes = (d) => {
-        setApiState({ ...apiState, ...d });
+    const setData = (data) => {
+        setDetails({ ...details, ...data });
     };
 
-    const anime = new Anime(setEpisodes);
+    const anime = new Anime(setData, source);
 
     useEffect(() => {
-        anime.getEpisodes(item._id);
-    }, []);
+        anime.getEpisodes(id);
 
-    const openPlayer = (source) => {
+        return () => {
+            source.cancel();
+        };
+    }, [id]);
+
+    const openPlayer = (source, episodeId, sourceId) => {
         if (isConnected) {
             navigation.navigate('Player', {
-                title: item.title,
-                poster: item.image,
+                id: data._id,
+                title: data.title,
                 source,
+                episodeId,
+                sourceId,
+                poster: data.image,
             });
         } else {
             showModal();
@@ -66,10 +89,23 @@ const Details = ({ navigation }) => {
                 cancelButtonIndex: options.length,
                 withTitle: true,
                 title: 'Choose quality: ',
+                containerStyle: {
+                    backgroundColor: theme.colors.background,
+                },
+                textStyle: {
+                    color: theme.colors.text,
+                },
+                titleTextStyle: {
+                    color: theme.colors.text,
+                },
             },
             (buttonIndex) => {
                 data.episodes[0].sources[buttonIndex] &&
-                    openPlayer(data.episodes[0].sources[buttonIndex].url);
+                    openPlayer(
+                        data.episodes[0].sources[buttonIndex].url,
+                        data.episodes[0]._id,
+                        data.episodes[0].sources[buttonIndex]._id
+                    );
             }
         );
     };
@@ -79,215 +115,220 @@ const Details = ({ navigation }) => {
     const showModal = () => setVisible(true);
     const hideModal = () => setVisible(false);
 
+    const goBack = () => {
+        if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else {
+            navigation.navigate('BottomNavigation');
+        }
+    };
+
+    return (
+        <View
+            style={[
+                {
+                    backgroundColor: theme.colors.background,
+                    flex: 1,
+                },
+            ]}
+        >
+            <Appbar.Header
+                style={{
+                    backgroundColor: theme.colors.surface,
+                }}
+            >
+                <Appbar.Action icon="arrow---left" onPress={goBack} />
+                <Appbar.Content
+                    title="Details"
+                    style={{
+                        marginLeft: -8,
+                    }}
+                />
+                <Appbar.Action icon="send" onPress={() => onShare(id)} />
+            </Appbar.Header>
+
+            <DetailsLoadingState loading={loading} />
+
+            {data ? (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollViewContainer}
+                >
+                    <View style={styles.backgroundImageContainer}>
+                        <ImageBackground
+                            blurRadius={3}
+                            source={{ uri: data.poster }}
+                            style={styles.backgroundImage}
+                        >
+                            <Image
+                                source={{ uri: data.poster }}
+                                style={styles.poster}
+                            ></Image>
+                            <Text style={styles.movieTitle}>{data.title}</Text>
+                            <Text style={styles.ratingText}>
+                                IMDb {data.rating}
+                            </Text>
+                            <RatingStars
+                                style={styles.ratingStars}
+                                value={data.rating}
+                            />
+                        </ImageBackground>
+                    </View>
+
+                    <View style={styles.container}>
+                        <Text style={styles.originalTitle}>
+                            {data.originalTitle
+                                ? data.originalTitle
+                                : data.title}{' '}
+                            ({data.year})
+                        </Text>
+                        <Text style={styles.categories}>{data.categories.map(
+                            (category) =>
+                                category.slice(0, 1).toUpperCase() +
+                                category.slice(1)
+                        ).join`, `}</Text>
+
+                        {data.isSerial ? (
+                            <Button
+                                disabled={
+                                    !(
+                                        data &&
+                                        data.episodes &&
+                                        data.episodes.length
+                                    )
+                                }
+                                onPress={() =>
+                                    navigation.navigate('Seasons', {
+                                        episodes: data.episodes,
+                                        title: data.title,
+                                        image: data.image,
+                                        id: data._id,
+                                    })
+                                }
+                                style={styles.watchButton}
+                                mode="contained"
+                                color={theme.colors.accent}
+                                loading={loading}
+                            >
+                                Seasons
+                            </Button>
+                        ) : (
+                            <Button
+                                disabled={
+                                    !(
+                                        data &&
+                                        data.episodes &&
+                                        data.episodes.length
+                                    )
+                                }
+                                onPress={() => {
+                                    openActionSheet();
+                                }}
+                                style={styles.watchButton}
+                                mode="contained"
+                                color={theme.colors.accent}
+                                loading={loading}
+                            >
+                                Watch
+                            </Button>
+                        )}
+
+                        <View style={styles.admobContainer}>
+                            <AdmobBanner style={styles.admob} />
+                        </View>
+
+                        <View>
+                            <Text style={styles.descriptionHeadline}>
+                                Summary
+                            </Text>
+                            <Text style={styles.description}>
+                                {data.description}
+                            </Text>
+                        </View>
+                    </View>
+                </ScrollView>
+            ) : null}
+
+            <NoConnection visible={visible} hideModal={hideModal} />
+        </View>
+    );
+};
+
+const ConnectedApp = connectActionSheet(withTheme(Details));
+
+export default ({ navigation, route }) => {
     return (
         <>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={{ backgroundColor: '#fff', paddingBottom: 24 }}
-                contentContainerStyle={{ paddingBottom: 24 }}
-            >
-                <View
-                    style={{ borderRadius: 8, margin: 16, overflow: 'hidden' }}
-                >
-                    <ImageBackground
-                        blurRadius={8}
-                        source={{ uri: item.poster }}
-                        style={{
-                            flex: 1,
-                            padding: 24,
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Image
-                            source={{ uri: item.poster }}
-                            style={styles.poster}
-                        ></Image>
-                        <Text
-                            style={{
-                                fontSize: 16,
-                                marginTop: 24,
-                                color: '#fff',
-                                textAlign: 'center',
-                                paddingHorizontal: 8,
-                            }}
-                        >
-                            {item.title}
-                        </Text>
-                        <Text
-                            style={{
-                                fontSize: 16,
-                                marginTop: 8,
-                                color: '#fff',
-                            }}
-                        >
-                            IMDb {item.rating}
-                        </Text>
-                        <RatingStars
-                            style={{ marginTop: 12 }}
-                            value={item.rating}
-                        />
-                    </ImageBackground>
-                </View>
-
-                <View style={{ paddingHorizontal: 20, marginTop: 8, flex: 1 }}>
-                    <Text
-                        style={{
-                            fontSize: 16,
-                            fontFamily: 'Montserrat SemiBold',
-                        }}
-                    >
-                        {item.originalTitle ? item.originalTitle : item.title} (
-                        {item.year})
-                    </Text>
-                    <Text style={{ fontSize: 14, marginTop: 8 }}>{item
-                        .categories.join`, `}</Text>
-
-                    <View
-                        style={{
-                            backgroundColor: '#fff',
-                            flexDirection: 'row',
-                            marginTop: 16,
-                        }}
-                    >
-                        {item.isSerial ? (
-                            <>
-                                <Button
-                                    disabled={
-                                        !(
-                                            data &&
-                                            data.episodes &&
-                                            data.episodes.length
-                                        )
-                                    }
-                                    onPress={() =>
-                                        navigation.navigate('Seasons', {
-                                            episodes: data.episodes,
-                                            title: data.title,
-                                            image: item.image,
-                                        })
-                                    }
-                                    style={{ flex: 1, elevation: 0 }}
-                                    mode="contained"
-                                    color="#34495e"
-                                    loading={loading}
-                                >
-                                    Seasons
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button
-                                    disabled={
-                                        !(
-                                            data &&
-                                            data.episodes &&
-                                            data.episodes.length
-                                        )
-                                    }
-                                    onPress={() => {
-                                        openActionSheet();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        elevation: 0,
-                                    }}
-                                    mode="contained"
-                                    color="#34495e"
-                                    loading={loading}
-                                >
-                                    Watch
-                                </Button>
-                            </>
-                        )}
-                    </View>
-
-                    <View>
-                        <Text
-                            style={{
-                                fontSize: 16,
-                                marginTop: 16,
-                                fontFamily: 'Montserrat SemiBold',
-                            }}
-                        >
-                            Summary
-                        </Text>
-                        <Text
-                            style={{
-                                marginTop: 8,
-                                lineHeight: 20,
-                                textAlign: 'justify',
-                            }}
-                        >
-                            {item.description}
-                        </Text>
-                    </View>
-                </View>
-            </ScrollView>
-
-            <Portal>
-                <Modal
-                    visible={visible}
-                    onDismiss={hideModal}
-                    contentContainerStyle={{
-                        backgroundColor: '#fff',
-                        padding: 24,
-                        margin: 32,
-                        borderRadius: 4,
-                        alignItems: 'center',
-                    }}
-                >
-                    <Image
-                        source={require('../../../assets/compass.png')}
-                        resizeMode="contain"
-                        fadeDuration={0}
-                        style={{
-                            width: 160,
-                            height: 160,
-                            marginBottom: 16,
-                        }}
-                    />
-                    <Subheading>{'Probably you are offline'}</Subheading>
-
-                    <Text
-                        style={{
-                            marginBottom: 8,
-                            marginTop: 8,
-                            textAlign: 'center',
-                        }}
-                    >
-                        Check your internet connection and try again
-                    </Text>
-                </Modal>
-            </Portal>
+            <ActionSheetProvider>
+                <ConnectedApp navigation={navigation} route={route} />
+            </ActionSheetProvider>
         </>
     );
 };
 
 const styles = StyleSheet.create({
     poster: {
-        width: 160,
-        height: 240,
+        width: width / 3,
+        height: width / 2,
         borderRadius: 4,
     },
+    scrollViewContainer: { paddingBottom: 24 },
+    backgroundImageContainer: {
+        borderRadius: 8,
+        margin: 16,
+        overflow: 'hidden',
+    },
+    backgroundImage: {
+        flex: 1,
+        padding: 32,
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
+    movieTitle: {
+        fontSize: 16,
+        marginTop: 32,
+        color: '#fff',
+        textAlign: 'center',
+        paddingHorizontal: 8,
+    },
+    ratingText: {
+        fontSize: 16,
+        marginTop: 8,
+        color: '#fff',
+    },
+    ratingStars: {
+        marginTop: 12,
+    },
+    container: { paddingHorizontal: 20 },
+    originalTitle: {
+        fontSize: 16,
+        fontFamily: 'Montserrat SemiBold',
+    },
+    categories: { fontSize: 14, marginTop: 8 },
+    watchButton: {
+        marginTop: 16,
+        flex: 1,
+        elevation: 0,
+    },
+    admobContainer: {
+        backgroundColor: 'transparent',
+        alignItems: 'center',
+        padding: 0,
+        margin: 0,
+        borderRadius: 4,
+        marginTop: 16,
+    },
+    admob: {
+        margin: 0,
+        width: width - 40,
+    },
+    descriptionHeadline: {
+        fontSize: 16,
+        marginTop: 16,
+        fontFamily: 'Montserrat SemiBold',
+    },
+    description: {
+        marginTop: 8,
+        lineHeight: 20,
+    },
 });
-
-const ConnectedApp = connectActionSheet(Details);
-
-export default ({ navigation }) => {
-    return (
-        <>
-            <StatusBar />
-            <Appbar.Header>
-                <Appbar.Action
-                    icon="arrow---left"
-                    onPress={() => navigation.goBack()}
-                />
-                <Appbar.Content style={{ marginLeft: -8 }} title="Detail" />
-            </Appbar.Header>
-            <ActionSheetProvider>
-                <ConnectedApp navigation={navigation} />
-            </ActionSheetProvider>
-        </>
-    );
-};

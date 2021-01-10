@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text } from 'react-native-paper';
+import { Text, withTheme } from 'react-native-paper';
 import {
     View,
     ImageBackground,
@@ -17,6 +17,7 @@ const itemHeight = itemWidth * 1.5;
 class FlatlistItem extends Component {
     constructor(props) {
         super(props);
+        this.theme = this.props.theme;
     }
 
     render() {
@@ -27,8 +28,8 @@ class FlatlistItem extends Component {
             >
                 <View
                     style={{
-                        width: itemWidth,
-                        height: itemHeight,
+                        width: this.props.width,
+                        height: this.props.height,
                     }}
                 >
                     <Text
@@ -37,22 +38,33 @@ class FlatlistItem extends Component {
                             {
                                 backgroundColor:
                                     this.props.rating >= 7
-                                        ? '#2ecc71'
+                                        ? this.theme.colors.green
                                         : this.props.rating < 3
-                                        ? '#E74C3C'
-                                        : '#7f8c8d',
+                                        ? this.theme.colors.red
+                                        : this.theme.colors.disabled,
                             },
                         ]}
                     >
                         {this.props.rating}
                     </Text>
-                    <View style={styles.container}>
+                    <View
+                        style={[
+                            styles.container,
+                            {
+                                backgroundColor: this.theme.colors.surface,
+                            },
+                        ]}
+                    >
                         <ImageBackground
                             source={{ uri: this.props.poster }}
                             style={styles.imageBackground}
                         >
                             <LinearGradient
-                                colors={['transparent', '#34495eef']}
+                                colors={[
+                                    'transparent',
+                                    'transparent',
+                                    this.theme.colors.accent,
+                                ]}
                                 style={styles.linearGradient}
                             >
                                 <Text style={styles.title}>
@@ -67,11 +79,15 @@ class FlatlistItem extends Component {
     }
 }
 
+FlatlistItem.defaultProps = {
+    width: itemWidth,
+    height: itemHeight,
+};
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         height: 280,
-        backgroundColor: '#999',
         margin: 4,
         borderRadius: 4,
         overflow: 'hidden',
@@ -107,17 +123,6 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         fontSize: 12,
     },
-    qualityBadge: {
-        color: '#fff',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        position: 'absolute',
-        top: 16,
-        right: 0,
-        zIndex: 10,
-        borderRadius: 2,
-        fontSize: 12,
-    },
 });
 
-export default FlatlistItem;
+export default withTheme(FlatlistItem);

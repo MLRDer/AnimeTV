@@ -2,20 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
     Animated,
     Dimensions,
-    Text,
     TouchableWithoutFeedback,
     View,
     StyleSheet,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import {
-    Appbar,
-    Button,
-    Divider,
-    IconButton,
-    Menu,
-    Provider,
-} from 'react-native-paper';
+import { Appbar, IconButton, Text, withTheme } from 'react-native-paper';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import Slider from '@react-native-community/slider';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -33,6 +24,7 @@ import {
 } from './icons';
 
 import FullScreenIcon from './FullScreenIcon';
+import VideoError from '../VideoError';
 
 // UI states
 var ControlStates;
@@ -90,7 +82,7 @@ const defaultProps = {
     videoBackground: '#000',
     sliderColor: '#fff',
     errorCallback: (error) =>
-        console.error('Error: ', error.message, error.type, error.obj),
+        console.log('Error: ', error.message, error.type, error.obj),
     showControlsOnLoad: true,
     disableSlider: false,
 };
@@ -174,6 +166,8 @@ const VideoPlayer = ({
     videoBackground,
     sliderColor,
     errorCallback,
+    videoPlayError,
+    theme,
 }) => {
     let playbackInstance = null;
     let showingAnimation = null;
@@ -195,6 +189,21 @@ const VideoPlayer = ({
     const [controlsOpacity] = useState(new Animated.Value(1));
 
     const [landscape, setLandscape] = useState(false);
+    const [visible, setVisible] = useState(false);
+
+    const showModal = () => setVisible(true);
+
+    const hideModal = () => {
+        if (playbackState !== PlaybackStates.Error) setVisible(false);
+    };
+
+    useEffect(() => {
+        if (playbackState === PlaybackStates.Error) {
+            showModal();
+        } else {
+            hideModal();
+        }
+    }, [playbackState]);
 
     useEffect(() => {
         if (source === null) {
@@ -224,13 +233,8 @@ const VideoPlayer = ({
         if (!status.isLoaded) {
             if (status.error) {
                 updatePlaybackState(PlaybackStates.Error);
-                const errorMsg = `Encountered a fatal error during playback: ${status.error}`;
+                const errorMsg = status.error;
                 setError(errorMsg);
-                errorCallback({
-                    type: ErrorSeverity.Fatal,
-                    message: errorMsg,
-                    obj: {},
-                });
             }
         } else {
             setPlaybackInstancePosition(status.positionMillis || 0);
@@ -424,7 +428,21 @@ const VideoPlayer = ({
     };
 
     const ErrorText = ({ text }) => (
-        <Text style={[styles.textStyle, { textAlign: 'center' }]}>{text}</Text>
+        <Text
+            style={[
+                styles.textStyle,
+                {
+                    textAlign: 'center',
+                    backgroundColor: theme.colors.red,
+                    color: '#fff',
+                    padding: 16,
+                    margin: 8,
+                    borderRadius: 4,
+                },
+            ]}
+        >
+            {text}
+        </Text>
     );
 
     return (
@@ -449,8 +467,6 @@ const VideoPlayer = ({
                     onPress={toggleControls}
                 >
                     <View style={styles.innerContainer}>
-                        <StatusBar style="light" />
-
                         {((playbackState === PlaybackStates.Buffering &&
                             Date.now() - lastPlaybackStateUpdate >
                                 spinnerShowDelay) ||
@@ -473,6 +489,15 @@ const VideoPlayer = ({
                                 <ErrorText text={error} />
                             </CenteredView>
                         )}
+
+                        <VideoError
+                            visible={visible}
+                            hideModal={hideModal}
+                            onSubmit={() => {
+                                setVisible(false);
+                                videoPlayError({ error });
+                            }}
+                        />
 
                         <Animated.View
                             pointerEvents={
@@ -615,7 +640,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     appbarHeader: { backgroundColor: 'transparent' },
-    appbarText: { color: '#fff', marginLeft: -16 },
+    appbarText: { color: '#fff', marginLeft: -8 },
     textStyle: {
         color: '#FFF',
         fontSize: 12,
@@ -650,4 +675,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default withDefaultProps(VideoPlayer, defaultProps);
+export default withTheme(withDefaultProps(VideoPlayer, defaultProps));

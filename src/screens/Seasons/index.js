@@ -1,40 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import {
-    Animated,
-    View,
-    ScrollView,
-    ImageBackground,
-    StyleSheet,
-    SectionList,
-    Image,
-    TouchableNativeFeedback,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, SectionList } from 'react-native';
 import {
     Appbar,
     Text,
-    Button,
     IconButton,
     TouchableRipple,
-    Portal,
-    Modal,
-    Subheading,
+    withTheme,
 } from 'react-native-paper';
 import {
     useActionSheet,
     ActionSheetProvider,
     connectActionSheet,
 } from '@expo/react-native-action-sheet';
-import { StatusBar } from 'expo-status-bar';
 import { useNetInfo } from '@react-native-community/netinfo';
 import _ from 'lodash';
 import IconlyBold from '../../icons/IconlyBold';
 import AdmobBanner from '../../components/AdmobBanner';
+import NoConnection from '../../components/NoConnection';
 
-const PlayIcon = () => (
+const PlayIcon = ({ color }) => (
     <IconlyBold
         name="play-arrow"
         size={32}
-        color={'#34495e'}
+        color={color}
         style={[
             {
                 marginLeft: 2,
@@ -44,8 +32,8 @@ const PlayIcon = () => (
     />
 );
 
-const Seasons = ({ navigation }) => {
-    const { episodes, image } = navigation.state.params;
+const Seasons = ({ navigation, route, theme }) => {
+    const { episodes, image, id } = route.params;
     const { isConnected } = useNetInfo();
 
     const epz = Object.entries(_.groupBy(episodes, 'season')).map((season) =>
@@ -53,19 +41,22 @@ const Seasons = ({ navigation }) => {
     );
     const { showActionSheetWithOptions } = useActionSheet();
 
-    const openPlayer = (title, source) => {
+    const openPlayer = (title, source, episodeId, sourceId) => {
         if (isConnected) {
             navigation.navigate('Player', {
+                id,
                 title,
-                poster: image,
                 source,
+                episodeId,
+                sourceId,
+                poster: image,
             });
         } else {
             showModal();
         }
     };
 
-    const openActionSheet = ({ sources, name }) => {
+    const openActionSheet = ({ sources, name, _id }) => {
         const options = sources.map((source) => source.quality.toString());
 
         showActionSheetWithOptions(
@@ -74,10 +65,24 @@ const Seasons = ({ navigation }) => {
                 cancelButtonIndex: options.length,
                 withTitle: true,
                 title: 'Choose quality: ',
+                containerStyle: {
+                    backgroundColor: theme.colors.background,
+                },
+                textStyle: {
+                    color: theme.colors.text,
+                },
+                titleTextStyle: {
+                    color: theme.colors.text,
+                },
             },
             (buttonIndex) => {
                 sources[buttonIndex] &&
-                    openPlayer(name, sources[buttonIndex].url);
+                    openPlayer(
+                        name,
+                        sources[buttonIndex].url,
+                        _id,
+                        sources[buttonIndex]._id
+                    );
             }
         );
     };
@@ -88,93 +93,101 @@ const Seasons = ({ navigation }) => {
     const hideModal = () => setVisible(false);
 
     return (
-        <>
-            <View style={styles.container}>
-                <SectionList
-                    sections={epz}
-                    keyExtractor={(item, index) => item._id}
-                    renderItem={({ item }) => (
-                        <TouchableRipple
-                            onPress={() => {
-                                openActionSheet(item);
-                            }}
-                            rippleColor="#34495e"
-                        >
-                            <View style={styles.item}>
-                                <Text style={styles.title}>
-                                    {item.episode}. {item.name}
-                                </Text>
-                                <View style={styles.actions}>
-                                    <IconButton
-                                        style={{
-                                            backgroundColor: '#fcfcfc',
-                                            margin: 0,
-                                        }}
-                                        icon={() => <PlayIcon />}
-                                        size={24}
-                                        rippleColor="#999"
-                                        onPress={() => {
-                                            openActionSheet(item);
-                                        }}
-                                    />
-                                </View>
-                            </View>
-                        </TouchableRipple>
-                    )}
-                    renderSectionHeader={({ section: { title } }) => (
-                        <Text style={styles.header}>Season {title}</Text>
-                    )}
-                    renderSectionFooter={() => <AdmobBanner />}
+        <View
+            style={{
+                backgroundColor: theme.colors.background,
+                flex: 1,
+            }}
+        >
+            <Appbar.Header
+                style={{
+                    backgroundColor: theme.colors.surface,
+                }}
+            >
+                <Appbar.Action
+                    icon="arrow---left"
+                    onPress={() => navigation.goBack()}
                 />
-            </View>
-            <Portal>
-                <Modal
-                    visible={visible}
-                    onDismiss={hideModal}
-                    contentContainerStyle={{
-                        backgroundColor: '#fff',
-                        padding: 24,
-                        margin: 32,
-                        borderRadius: 4,
-                        alignItems: 'center',
-                    }}
-                >
-                    <Image
-                        source={require('../../../assets/compass.png')}
-                        resizeMode="contain"
-                        fadeDuration={0}
-                        style={{
-                            width: 160,
-                            height: 160,
-                            marginBottom: 16,
-                        }}
-                    />
-                    <Subheading>{'Probably you are offline'}</Subheading>
-
-                    <Text
-                        style={{
-                            marginBottom: 8,
-                            marginTop: 8,
-                            textAlign: 'center',
+                <Appbar.Content style={{ marginLeft: -8 }} title="Seasons" />
+            </Appbar.Header>
+            <SectionList
+                sections={epz}
+                style={{
+                    backgroundColor: theme.colors.background,
+                }}
+                keyExtractor={(item, index) => item._id}
+                renderItem={({ item }) => (
+                    <TouchableRipple
+                        onPress={() => {
+                            openActionSheet(item);
                         }}
                     >
-                        Check your internet connection and try again
+                        <View
+                            style={[
+                                styles.item,
+                                {
+                                    borderColor: theme.colors.background,
+                                    backgroundColor: theme.colors.surface,
+                                },
+                            ]}
+                        >
+                            <Text style={styles.title}>
+                                {item.episode}. {item.name}
+                            </Text>
+                            <View style={styles.actions}>
+                                <IconButton
+                                    style={[
+                                        styles.playIcon,
+                                        {
+                                            backgroundColor:
+                                                theme.colors.background,
+                                        },
+                                    ]}
+                                    icon={() => (
+                                        <PlayIcon color={theme.colors.text} />
+                                    )}
+                                    size={24}
+                                    onPress={() => {
+                                        openActionSheet(item);
+                                    }}
+                                />
+                            </View>
+                        </View>
+                    </TouchableRipple>
+                )}
+                renderSectionHeader={({ section: { title } }) => (
+                    <Text
+                        style={[
+                            styles.header,
+                            {
+                                backgroundColor: theme.colors.background,
+                            },
+                        ]}
+                    >
+                        Season {title}
                     </Text>
-                </Modal>
-            </Portal>
-        </>
+                )}
+                renderSectionFooter={() => (
+                    <View
+                        style={{
+                            flex: 1,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <AdmobBanner />
+                    </View>
+                )}
+            />
+            <NoConnection visible={visible} hideModal={hideModal} />
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#fff',
-    },
     header: {
         paddingVertical: 8,
         paddingHorizontal: 16,
         fontSize: 16,
-        backgroundColor: '#ecf0f1',
     },
     item: {
         alignItems: 'center',
@@ -182,8 +195,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 16,
-        borderBottomWidth: 0.3,
-        borderColor: '#bdc3c7',
+        borderBottomWidth: 1,
     },
     title: {
         flex: 1,
@@ -192,23 +204,18 @@ const styles = StyleSheet.create({
     actions: {
         flexDirection: 'row',
     },
+    playIcon: {
+        margin: 0,
+    },
 });
 
-const ConnectedApp = connectActionSheet(Seasons);
+const ConnectedApp = connectActionSheet(withTheme(Seasons));
 
-export default ({ navigation }) => {
+export default ({ navigation, route }) => {
     return (
         <>
-            <StatusBar />
-            <Appbar.Header>
-                <Appbar.Action
-                    icon="arrow---left"
-                    onPress={() => navigation.goBack()}
-                />
-                <Appbar.Content style={{ marginLeft: -8 }} title="Seasons" />
-            </Appbar.Header>
             <ActionSheetProvider>
-                <ConnectedApp navigation={navigation} />
+                <ConnectedApp navigation={navigation} route={route} />
             </ActionSheetProvider>
         </>
     );

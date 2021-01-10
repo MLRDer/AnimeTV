@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "AnimePro",
-    "slug": "AnimePro",
-    "version": "1.1.0",
+    "name": "Cassette",
+    "slug": "Cassette",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#fff"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -16,6 +16,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -24,17 +25,40 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.nurikjohn.AnimePro",
+      "package": "com.nurikjohn.cassette",
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-3813010680847679~6518219426"
       },
-      "permissions": []
+      "permissions": [
+        "BILLING"
+      ],
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "cassette.muhammadjanov.uz",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "androidStatusBar": {
+      "translucent": false
     },
     "androidNavigationBar": {
       "backgroundColor": "#000000"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "scheme": "cassette"
   }
 }
