@@ -13,6 +13,7 @@ import Main from './src/Main';
 import IconlyBold from './src/icons/IconlyBold';
 import IconlyBroken from './src/icons/IconlyBroken';
 import { StatusBar } from 'expo-status-bar';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 const fontConfig = {
     default: {
@@ -40,12 +41,16 @@ const lightTheme = {
     colors: {
         ...DefaultTheme.colors,
         primary: '#ffffff',
-        accent: '#2980b9',
+        accent: '#1f1f1fee',
         surface: '#ffffff',
         background: '#F5F5F5',
         green: '#2ecc71',
         red: '#E74C3C',
+        yellow: '#f1c40f',
+        gray: '#eee',
+        white: '#fff',
         shimmerColors: ['#ffffff', '#F5F5F5aa', '#ffffff'],
+        telegram: '#31A8DC',
     },
     fonts,
 };
@@ -57,12 +62,16 @@ const darkTheme = {
     colors: {
         ...DarkTheme.colors,
         primary: '#2980b9',
-        accent: '#2980b9',
+        accent: '#1f1f1fee',
         surface: '#1f1f1f',
         background: '#171717',
         green: '#2ecc71',
         red: '#E74C3C',
+        yellow: '#f39c12',
+        gray: '#eee',
+        white: '#fff',
         shimmerColors: ['#232323', '#1f1f1f', '#232323'],
+        telegram: '#31A8DC',
     },
     fonts,
 };
@@ -73,10 +82,15 @@ const themes = {
     auto: 'auto',
 };
 
+try {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+} catch (error) {
+    console.log(error);
+}
+
 export default function App() {
     const [scheme, setScheme] = useState(themes.light);
     const systemScheme = useColorScheme();
-    console.log('SYSTEM THEME:', systemScheme);
 
     const saveTheme = async (value) => {
         try {
@@ -95,7 +109,6 @@ export default function App() {
         try {
             const value = await AsyncStorage.getItem('@Cassette:theme');
             if (value !== null) {
-                console.log('THEME:', value);
                 setScheme(value);
             }
         } catch (error) {

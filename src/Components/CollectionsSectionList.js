@@ -24,137 +24,129 @@ const CollectionsSectionList = ({
     const itemHeight = itemWidth * 1.5;
 
     return (
-        <>
-            <SectionList
-                ListHeaderComponent={ListHeaderComponent}
-                onScroll={onScroll}
-                ref={reference}
-                refreshControl={refreshControl}
-                maxToRenderPerBatch={5}
-                initialNumToRender={5}
-                windowSize={11}
-                sections={sections}
-                style={{ flexGrow: 0 }}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.container}
-                keyExtractor={(item) => {
-                    return item._id;
-                }}
-                renderSectionHeader={({ section }) => {
-                    return section.data.length ? (
-                        <View key={section._id}>
-                            <View
+        <SectionList
+            ListHeaderComponent={ListHeaderComponent}
+            onScroll={onScroll}
+            ref={reference}
+            refreshControl={refreshControl}
+            maxToRenderPerBatch={50}
+            initialNumToRender={20}
+            windowSize={13}
+            sections={sections}
+            style={{ flexGrow: 0 }}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(item) => {
+                return item._id;
+            }}
+            renderSectionHeader={({ section }) => {
+                return section.data.length ? (
+                    <View key={section._id}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                marginTop: 4,
+                                marginBottom: -4,
+                                paddingHorizontal: 16,
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Text
                                 style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    marginTop: 4,
-                                    marginBottom: -4,
-                                    paddingHorizontal: 16,
-                                    alignItems: 'center',
+                                    marginLeft: 4,
+                                    fontSize: 18,
+                                    fontFamily: 'Montserrat SemiBold',
                                 }}
                             >
-                                <Text
+                                {section.title}
+                            </Text>
+                            <Button
+                                compact
+                                contentStyle={{
+                                    margin: 0,
+                                    height: 32,
+                                }}
+                                mode="text"
+                                color="black"
+                                labelStyle={{
+                                    fontSize: 14,
+                                    color: theme.colors.text,
+                                }}
+                                uppercase={false}
+                                onPress={() => openCollection(section._id)}
+                            >
+                                Open
+                            </Button>
+                        </View>
+
+                        <FlatList
+                            maxToRenderPerBatch={7}
+                            initialNumToRender={5}
+                            windowSize={5}
+                            data={section.data.slice(0, 4)}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{
+                                padding: 8,
+                            }}
+                            keyExtractor={(_item, index) => _item._id}
+                            renderItem={({ item: _item }) => (
+                                <FlatlistItem
+                                    width={itemWidth}
+                                    height={itemHeight}
+                                    _id={_item._id}
+                                    categories={_item.categories}
+                                    description={_item.description}
+                                    year={_item.year}
+                                    isSerial={_item.isSerial}
+                                    poster={_item.poster}
+                                    image={_item.image}
+                                    rating={_item.rating}
+                                    title={_item.title}
+                                    onPress={() => handleSelect(_item._id)}
+                                    horizontal
+                                />
+                            )}
+                            ListFooterComponent={() => (
+                                <View
                                     style={{
-                                        marginLeft: 4,
-                                        fontSize: 18,
-                                        fontFamily: 'Montserrat SemiBold',
+                                        margin: 4,
+                                        width: itemWidth - 8,
+                                        height: itemHeight - 8,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
                                     }}
                                 >
-                                    {section.title}
-                                </Text>
-                                <Button
-                                    compact
-                                    contentStyle={{
-                                        margin: 0,
-                                        height: 32,
-                                    }}
-                                    mode="text"
-                                    color="black"
-                                    labelStyle={{
-                                        fontSize: 12,
-                                    }}
-                                    uppercase={false}
-                                    onPress={() => openCollection(section._id)}
-                                >
+                                    <IconButton
+                                        size={40}
+                                        style={{
+                                            backgroundColor:
+                                                theme.colors.surface,
+                                            elevation: 4,
+                                        }}
+                                        icon="arrow---right"
+                                        onPress={() =>
+                                            openCollection(section._id)
+                                        }
+                                    />
                                     <Text
                                         style={{
                                             fontSize: 16,
+                                            marginTop: 8,
                                         }}
                                     >
-                                        All
+                                        Show all
                                     </Text>
-                                </Button>
-                            </View>
-
-                            <FlatList
-                                maxToRenderPerBatch={3}
-                                initialNumToRender={3}
-                                windowSize={5}
-                                data={section.data.slice(0, 4)}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{
-                                    padding: 8,
-                                }}
-                                keyExtractor={(_item, index) => _item._id}
-                                renderItem={({ item: _item }) => (
-                                    <FlatlistItem
-                                        width={itemWidth}
-                                        height={itemHeight}
-                                        _id={_item._id}
-                                        categories={_item.categories}
-                                        description={_item.description}
-                                        year={_item.year}
-                                        isSerial={_item.isSerial}
-                                        poster={_item.poster}
-                                        image={_item.image}
-                                        rating={_item.rating}
-                                        title={_item.title}
-                                        onPress={handleSelect}
-                                        horizontal
-                                    />
-                                )}
-                                ListFooterComponent={() => (
-                                    <View
-                                        style={{
-                                            margin: 4,
-                                            width: itemWidth - 8,
-                                            height: itemHeight - 8,
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <IconButton
-                                            size={40}
-                                            style={{
-                                                backgroundColor:
-                                                    theme.colors.surface,
-                                                elevation: 4,
-                                            }}
-                                            icon="arrow---right"
-                                            onPress={() =>
-                                                openCollection(section._id)
-                                            }
-                                        />
-                                        <Text
-                                            style={{
-                                                fontSize: 16,
-                                                marginTop: 8,
-                                            }}
-                                        >
-                                            Show all
-                                        </Text>
-                                    </View>
-                                )}
-                            />
-                        </View>
-                    ) : null;
-                }}
-                renderItem={() => {
-                    return null;
-                }}
-            />
-        </>
+                                </View>
+                            )}
+                        />
+                    </View>
+                ) : null;
+            }}
+            renderItem={() => {
+                return null;
+            }}
+        />
     );
 };
 

@@ -1,134 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    TouchableWithoutFeedback,
     View,
-    StyleSheet,
+    Dimensions,
+    Animated,
+    TouchableWithoutFeedback,
+    TouchableNativeFeedback,
+    BackHandler,
 } from 'react-native';
-import { Appbar, IconButton, Text, withTheme } from 'react-native-paper';
-import * as ScreenOrientation from 'expo-screen-orientation';
-import Slider from '@react-native-community/slider';
-import { useNetInfo } from '@react-native-community/netinfo';
-import { Audio, Video } from 'expo-av';
-import { withDefaultProps } from 'with-default-props';
+import { StatusBar } from 'expo-status-bar';
 import {
+    withTheme,
+    Text,
+    ActivityIndicator,
+    Appbar,
+    Button,
+    IconButton,
+} from 'react-native-paper';
+import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { useNetInfo } from '@react-native-community/netinfo';
+import Slider from '@react-native-community/slider';
+import { Audio, Video } from 'expo-av';
+import Constants from 'expo-constants';
+import {
+    PlayIcon,
+    PauseIcon,
+    BackwardIcon,
+    ForwardIcon,
     FullscreenEnterIcon,
     FullscreenExitIcon,
-    PauseIcon,
-    ForwardIcon,
-    BackwardIcon,
-    PlayIcon,
-    ReplayIcon,
-    Spinner,
 } from './icons';
-
-import FullScreenIcon from './FullScreenIcon';
 import VideoError from '../VideoError';
+import { log } from 'react-native-reanimated';
 
-// UI states
-var ControlStates;
-(function (ControlStates) {
-    ControlStates['Shown'] = 'Show';
-    ControlStates['Showing'] = 'Showing';
-    ControlStates['Hidden'] = 'Hidden';
-    ControlStates['Hiding'] = 'Hiding';
-})(ControlStates || (ControlStates = {}));
-var PlaybackStates;
-(function (PlaybackStates) {
-    PlaybackStates['Loading'] = 'Loading';
-    PlaybackStates['Playing'] = 'Playing';
-    PlaybackStates['Paused'] = 'Paused';
-    PlaybackStates['Buffering'] = 'Buffering';
-    PlaybackStates['Error'] = 'Error';
-    PlaybackStates['Ended'] = 'Ended';
-})(PlaybackStates || (PlaybackStates = {}));
-var SeekStates;
-(function (SeekStates) {
-    SeekStates['NotSeeking'] = 'NotSeeking';
-    SeekStates['Seeking'] = 'Seeking';
-    SeekStates['Seeked'] = 'Seeked';
-})(SeekStates || (SeekStates = {}));
-var ErrorSeverity;
-(function (ErrorSeverity) {
-    ErrorSeverity['Fatal'] = 'Fatal';
-    ErrorSeverity['NonFatal'] = 'NonFatal';
-})(ErrorSeverity || (ErrorSeverity = {}));
-
-const defaultProps = {
-    videoRef: null,
-    children: null,
-    debug: false,
-    inFullscreen: false,
-    width: Dimensions.get('screen').width,
-    height: Dimensions.get('screen').height,
-    fadeInDuration: 200,
-    fadeOutDuration: 1000,
-    quickFadeOutDuration: 200,
-    hideControlsTimerDuration: 5000,
-    seekTime: 5000,
-    spinnerShowDelay: 200,
-    playIcon: PlayIcon,
-    replayIcon: ReplayIcon,
-    pauseIcon: PauseIcon,
-    forwardIcon: ForwardIcon,
-    backwardIcon: BackwardIcon,
-    spinner: Spinner,
-    fullscreenEnterIcon: FullscreenEnterIcon,
-    fullscreenExitIcon: FullscreenExitIcon,
-    showFullscreenButton: true,
-    thumbImage: null,
-    iosTrackImage: null,
-    videoBackground: '#000',
-    sliderColor: '#fff',
-    errorCallback: (error) =>
-        console.log('Error: ', error.message, error.type, error.obj),
-    showControlsOnLoad: true,
-    disableSlider: false,
-};
-
-const setAudio = async (errorCallback) => {
-    try {
-        await Audio.setAudioModeAsync({
-            allowsRecordingIOS: false,
-            interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-            playsInSilentModeIOS: true,
-            shouldDuckAndroid: true,
-            interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-            playThroughEarpieceAndroid: false,
-            staysActiveInBackground: false,
-        });
-    } catch (e) {
-        errorCallback({
-            type: ErrorSeverity.NonFatal,
-            message: 'setAudioModeAsync error',
-            obj: e,
-        });
-    }
-};
-
-const rotateScreen = (landscape) => {
-    ScreenOrientation.lockAsync(
-        landscape
-            ? ScreenOrientation.OrientationLock.PORTRAIT
-            : ScreenOrientation.OrientationLock.LANDSCAPE
-    );
-};
-
-const isPlayingOrBufferingOrPaused = (status) => {
-    if (!status.isLoaded) {
-        return PlaybackStates.Error;
-    }
-    if (status.isPlaying) {
-        return PlaybackStates.Playing;
-    }
-    if (status.isBuffering) {
-        return PlaybackStates.Buffering;
-    }
-    return PlaybackStates.Paused;
-};
-
-const getMMSSFromMillis = (millis) => {
+const formatMillis = (millis) => {
     const totalSeconds = millis / 1000;
     const seconds = String(Math.floor(totalSeconds % 60));
     const minutes = String(Math.floor((totalSeconds % 3600) / 60));
@@ -142,537 +47,673 @@ const getMMSSFromMillis = (millis) => {
     );
 };
 
-const VideoPlayer = ({
+const setAudio = async () => {
+    try {
+        await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DUCK_OTHERS,
+            playsInSilentModeIOS: false,
+            shouldDuckAndroid: true,
+            interruptionModeAndroid:
+                Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: false,
+        });
+    } catch (e) {
+        console.log({
+            type: ErrorSeverity.NonFatal,
+            message: 'setAudioModeAsync error',
+            obj: e,
+        });
+    }
+};
+
+const NurikVideoPlayer = ({
     title,
     source,
     poster,
-    navigation,
-    fadeInDuration,
-    fadeOutDuration,
-    quickFadeOutDuration,
-    hideControlsTimerDuration,
-    seekTime,
-    spinnerShowDelay,
-    playIcon: VideoPlayIcon,
-    replayIcon: VideoReplayIcon,
-    pauseIcon: VideoPauseIcon,
-    forwardIcon: VideoForwardIcon,
-    backwardIcon: VideoBackwardIcon,
-    spinner: VideoSpinner,
-    fullscreenEnterIcon: VideoFullscreenEnterIcon,
-    fullscreenExitIcon: VideoFullscreenExitIcon,
-    thumbImage,
-    iosTrackImage,
-    videoBackground,
-    sliderColor,
-    errorCallback,
+    goBack,
     videoPlayError,
     theme,
 }) => {
-    let playbackInstance = null;
+    const styles = createStyles(theme);
+
+    let player = null;
     let showingAnimation = null;
     let hideAnimation = null;
-    let shouldPlayAtEndOfSeek = true;
-    let controlsTimer = null;
+
     const { isConnected } = useNetInfo();
 
-    const [playbackState, setPlaybackState] = useState(PlaybackStates.Loading);
-    const [lastPlaybackStateUpdate, setLastPlaybackStateUpdate] = useState(
-        Date.now()
-    );
-    const [seekState, setSeekState] = useState(SeekStates.NotSeeking);
-    const [playbackInstancePosition, setPlaybackInstancePosition] = useState(0);
-    const [playbackInstanceDuration, setPlaybackInstanceDuration] = useState(0);
-    const [shouldPlay, setShouldPlay] = useState(false);
-    const [error, setError] = useState('');
-    const [controlsState, setControlsState] = useState(ControlStates.Shown);
-    const [controlsOpacity] = useState(new Animated.Value(1));
+    const [viewOpacity] = useState(new Animated.Value(1));
+    const [backwardOpacity] = useState(new Animated.Value(0));
+    const [forwardOpacity] = useState(new Animated.Value(0));
+    const [hidden, setHidden] = useState(false);
+    const [timer, setTimer] = useState(null);
+    const [countBackward, setCountBackward] = useState(0);
+    const [countForward, setCountForward] = useState(0);
+    const [lastPressBackward, setLastPressBackward] = useState(0);
+    const [lastPressForward, setLastPressForward] = useState(0);
 
     const [landscape, setLandscape] = useState(false);
+    const [playing, setPlaying] = useState(false);
+    const [errorText, setErrorText] = useState(null);
+    const [error, setError] = useState(null);
+    const [duration, setDuration] = useState(0);
+    const [loaded, setLoaded] = useState(0);
+    const [progress, setProgress] = useState(0);
+    const [dimensions, setDimensions] = useState(Dimensions.get('window'));
     const [visible, setVisible] = useState(false);
 
-    const showModal = () => setVisible(true);
-
-    const hideModal = () => {
-        if (playbackState !== PlaybackStates.Error) setVisible(false);
+    const { width, height } = {
+        width: landscape ? dimensions.height : dimensions.width,
+        height: landscape ? dimensions.width : dimensions.height,
     };
 
     useEffect(() => {
-        if (playbackState === PlaybackStates.Error) {
-            showModal();
-        } else {
-            hideModal();
+        if (player !== null) {
+            player.loadAsync(source, { shouldPlay: true }, false).catch((e) => {
+                console.log('Load error: ', e);
+            });
         }
-    }, [playbackState]);
+        resetTimer();
+
+        return () => {
+            player && player.unloadAsync();
+            clearTimeout(timer);
+        };
+    }, [player]);
 
     useEffect(() => {
-        if (source === null) {
-            console.error('`Source` is a required property');
-            throw new Error('`Source` is required');
-        }
-        setAudio(errorCallback);
+        if (error) setVisible(true);
+    }, [error]);
+
+    useEffect(() => {
+        setAudio();
+        activateKeepAwake();
+
+        return () => {
+            deactivateKeepAwake();
+        };
     });
 
-    const updatePlaybackState = (newPlaybackState) => {
-        if (playbackState !== newPlaybackState) {
-            setPlaybackState(newPlaybackState);
-            setLastPlaybackStateUpdate(Date.now());
-        }
-    };
+    useEffect(() => {
+        const backAction = () => {
+            handleBack();
+            return true;
+        };
 
-    const updateSeekState = (newSeekState) => {
-        setSeekState(newSeekState);
-        if (newSeekState === SeekStates.Seeking) {
-            controlsTimer && clearTimeout(controlsTimer);
-        } else {
-            resetControlsTimer();
-        }
-    };
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction
+        );
 
-    const updatePlaybackCallback = (status) => {
-        if (!status.isLoaded) {
-            if (status.error) {
-                updatePlaybackState(PlaybackStates.Error);
-                const errorMsg = status.error;
-                setError(errorMsg);
-            }
-        } else {
-            setPlaybackInstancePosition(status.positionMillis || 0);
-            setPlaybackInstanceDuration(status.durationMillis || 0);
-            setShouldPlay(status.shouldPlay);
-            if (
-                seekState === SeekStates.NotSeeking &&
-                playbackState !== PlaybackStates.Ended
-            ) {
-                if (status.didJustFinish && !status.isLooping) {
-                    updatePlaybackState(PlaybackStates.Ended);
-                } else {
-                    if (!isConnected && status.isBuffering) {
-                        updatePlaybackState(PlaybackStates.Error);
-                        setError(
-                            'You are probably offline.' +
-                                'Please make sure you are connected to the Internet to watch this video'
-                        );
-                    } else {
-                        updatePlaybackState(
-                            isPlayingOrBufferingOrPaused(status)
-                        );
-                    }
-                }
-            }
-        }
-    };
+        return () => backHandler.remove();
+    }, []);
 
-    const getSeekSliderPosition = () =>
-        playbackInstancePosition / playbackInstanceDuration || 0;
-
-    const onSeekSliderValueChange = async () => {
-        if (playbackInstance !== null && seekState !== SeekStates.Seeking) {
-            updateSeekState(SeekStates.Seeking);
-            shouldPlayAtEndOfSeek =
-                seekState === SeekStates.Seeked
-                    ? shouldPlayAtEndOfSeek
-                    : shouldPlay;
-            await playbackInstance.setStatusAsync({ shouldPlay: false });
-        }
-    };
-
-    const onSeekSliderSlidingComplete = async (value) => {
-        if (playbackInstance !== null) {
-            updateSeekState(SeekStates.Seeked);
-            updatePlaybackState(
-                shouldPlayAtEndOfSeek
-                    ? PlaybackStates.Buffering
-                    : PlaybackStates.Paused
+    const onPlaybackStatusUpdate = ({
+        isLoaded,
+        error,
+        positionMillis,
+        durationMillis,
+        playableDurationMillis,
+        isPlaying,
+        isBuffering,
+    }) => {
+        if (!isLoaded && error) {
+            setError(error);
+            setErrorText(
+                !isConnected
+                    ? 'You are probably offline. Please make sure you are connected to the Internet'
+                    : 'After analysing the issue, we will fix it as soon as possible!'
             );
-            try {
-                const playback = await playbackInstance.setStatusAsync({
-                    positionMillis: value * playbackInstanceDuration,
-                    shouldPlay: shouldPlayAtEndOfSeek,
-                });
-                updateSeekState(SeekStates.NotSeeking);
-                updatePlaybackState(isPlayingOrBufferingOrPaused(playback));
-            } catch (e) {
-                console.error('Seek error: ', e);
+        } else {
+            setDuration(durationMillis || 0);
+            setProgress(positionMillis || 0);
+            setLoaded(playableDurationMillis || 0);
+            setPlaying(isPlaying || false);
+
+            if (!isConnected && isBuffering) {
+                setErrorText(
+                    'You are probably offline.' +
+                        'Please make sure you are connected to the Internet to watch this video'
+                );
             }
         }
     };
 
-    const replay = async () => {
-        if (playbackInstance !== null) {
-            await playbackInstance.setStatusAsync({
-                shouldPlay: true,
-                positionMillis: 0,
-            });
-            setPlaybackState(PlaybackStates.Playing);
-        }
+    const resetTimer = () => {
+        timer && clearTimeout(timer);
+
+        setTimer(setTimeout(hideControls, 15000));
     };
 
-    const togglePlay = async () => {
-        if (controlsState === ControlStates.Hidden) {
-            return;
-        }
-        const shouldPlay = playbackState !== PlaybackStates.Playing;
-        if (playbackInstance !== null) {
-            await playbackInstance.setStatusAsync({ shouldPlay });
-        }
+    const rotateScreen = (force = false) => {
+        ScreenOrientation.lockAsync(
+            landscape || force
+                ? ScreenOrientation.OrientationLock.PORTRAIT
+                : ScreenOrientation.OrientationLock.LANDSCAPE
+        );
+
+        setLandscape(force ? false : !landscape);
     };
 
-    const seekHandle = async (seek) => {
-        if (playbackInstance !== null) {
-            updateSeekState(SeekStates.Seeked);
-            updatePlaybackState(
-                shouldPlayAtEndOfSeek
-                    ? PlaybackStates.Buffering
-                    : PlaybackStates.Paused
-            );
-            try {
-                const playback = await playbackInstance.setStatusAsync({
-                    positionMillis: playbackInstancePosition + seek,
-                    shouldPlay: shouldPlayAtEndOfSeek,
-                });
-                updateSeekState(SeekStates.NotSeeking);
-                updatePlaybackState(isPlayingOrBufferingOrPaused(playback));
-            } catch (e) {
-                console.error('Seek error: ', e);
-            }
-        }
-    };
-
-    const toggleControls = () => {
-        switch (controlsState) {
-            case ControlStates.Shown:
-                // If the controls are currently Shown, a tap should hide controls quickly
-                setControlsState(ControlStates.Hiding);
-                hideControls(true);
-                break;
-            case ControlStates.Hidden:
-                // If the controls are currently, show controls with fade-in animation
-                setControlsState(ControlStates.Shown);
-                showControls();
-                break;
-            case ControlStates.Hiding:
-                // If controls are fading out, a tap should reverse, and show controls
-                setControlsState(ControlStates.Shown);
-                showControls();
-                break;
-            case ControlStates.Showing:
-                // A tap when the controls are fading in should do nothing
-                break;
-        }
+    const hideModal = () => {
+        if (!error) setVisible(false);
     };
 
     const showControls = () => {
-        showingAnimation = Animated.timing(controlsOpacity, {
+        setHidden(false);
+        resetTimer();
+
+        showingAnimation = Animated.timing(viewOpacity, {
             toValue: 1,
-            duration: fadeInDuration,
+            duration: 200,
             useNativeDriver: true,
         });
-        showingAnimation.start(({ finished }) => {
-            if (finished) {
-                setControlsState(ControlStates.Shown);
-                resetControlsTimer();
-            }
-        });
+        showingAnimation.start();
     };
 
-    const hideControls = (immediately = false) => {
-        if (controlsTimer) {
-            clearTimeout(controlsTimer);
-        }
-        hideAnimation = Animated.timing(controlsOpacity, {
+    const hideControls = () => {
+        hideAnimation = Animated.timing(viewOpacity, {
             toValue: 0,
-            duration: immediately ? quickFadeOutDuration : fadeOutDuration,
+            duration: 200,
             useNativeDriver: true,
         });
-        hideAnimation.start(({ finished }) => {
-            if (finished) {
-                setControlsState(ControlStates.Hidden);
+        hideAnimation.start();
+
+        clearTimeout(timer);
+        setHidden(true);
+    };
+
+    const toggleControls = () => {
+        if (hidden) showControls();
+        else hideControls();
+    };
+
+    const togglePlayer = () => {
+        if (player !== null) {
+            try {
+                player.setStatusAsync({
+                    shouldPlay: !playing,
+                });
+            } catch (e) {
+                console.error('Seek error: ', e);
             }
-        });
-    };
-
-    const onTimerDone = () => {
-        // After the controls timer runs out, fade away the controls slowly
-        setControlsState(ControlStates.Hiding);
-        hideControls();
-    };
-
-    const resetControlsTimer = () => {
-        if (controlsTimer) {
-            clearTimeout(controlsTimer);
         }
-        controlsTimer = setTimeout(
-            () => onTimerDone(),
-            hideControlsTimerDuration
-        );
     };
 
-    const Control = ({ callback, children }) => {
-        return (
-            <IconButton
-                size={32}
-                rippleColor="#333"
-                onPress={callback}
-                icon={() => children}
-            />
-        );
+    const seek = (factor) => {
+        if (player !== null) {
+            try {
+                player.setPositionAsync(progress + 5000 * factor);
+                player.setStatusAsync({
+                    shouldPlay: playing,
+                });
+            } catch (e) {
+                console.error('Seek error: ', e);
+            }
+        }
     };
 
-    const CenteredView = ({ children }) => {
-        return (
-            <Animated.View style={styles.centeredView}>
-                {children}
-            </Animated.View>
-        );
+    const slideComplete = (value) => {
+        if (player !== null) {
+            try {
+                player.setStatusAsync({
+                    positionMillis: value * duration,
+                    shouldPlay: playing,
+                });
+            } catch (e) {
+                console.error('Seek error: ', e);
+            }
+        }
     };
 
-    const ErrorText = ({ text }) => (
-        <Text
-            style={[
-                styles.textStyle,
-                {
-                    textAlign: 'center',
-                    backgroundColor: theme.colors.red,
-                    color: '#fff',
-                    padding: 16,
-                    margin: 8,
-                    borderRadius: 4,
-                },
-            ]}
-        >
-            {text}
-        </Text>
-    );
+    var handleBack = () => {
+        rotateScreen(true);
+        goBack();
+    };
 
     return (
         <View style={styles.container}>
-            <Video
-                source={source}
-                posterSource={poster}
-                ref={(component) => (playbackInstance = component)}
-                onPlaybackStatusUpdate={updatePlaybackCallback}
-                style={{
-                    flex: 1,
-                    backgroundColor: videoBackground,
+            <StatusBar
+                style="light"
+                backgroundColor="transparent"
+                hidden={landscape}
+            />
+            <VideoError
+                visible={visible}
+                hideModal={hideModal}
+                onSubmit={() => {
+                    setVisible(false);
+                    videoPlayError({ error });
                 }}
-                resizeMode="contain"
-                usePoster={true}
-                shouldPlay={false}
+                error={errorText}
             />
 
-            <View style={styles.mainContainer}>
-                <TouchableWithoutFeedback
-                    style={styles.flex}
-                    onPress={toggleControls}
+            <View
+                style={[
+                    styles.controls,
+                    {
+                        flex: 1,
+                        justifyContent: 'space-between',
+                    },
+                ]}
+            >
+                <Animated.View
+                    style={{
+                        opacity: viewOpacity,
+                    }}
+                    pointerEvents={hidden ? 'none' : 'auto'}
                 >
-                    <View style={styles.innerContainer}>
-                        {((playbackState === PlaybackStates.Buffering &&
-                            Date.now() - lastPlaybackStateUpdate >
-                                spinnerShowDelay) ||
-                            playbackState === PlaybackStates.Loading) && (
-                            <CenteredView>
-                                <VideoSpinner />
-                            </CenteredView>
-                        )}
-
-                        {playbackState === PlaybackStates.Ended && (
-                            <CenteredView>
-                                <Control callback={replay}>
-                                    <VideoReplayIcon />
-                                </Control>
-                            </CenteredView>
-                        )}
-
-                        {playbackState === PlaybackStates.Error && (
-                            <CenteredView>
-                                <ErrorText text={error} />
-                            </CenteredView>
-                        )}
-
-                        <VideoError
-                            visible={visible}
-                            hideModal={hideModal}
-                            onSubmit={() => {
-                                setVisible(false);
-                                videoPlayError({ error });
+                    <Appbar
+                        style={{
+                            backgroundColor: 'transparent',
+                            width,
+                            marginTop: landscape
+                                ? 0
+                                : Constants.statusBarHeight,
+                        }}
+                    >
+                        <Appbar.Action
+                            icon="arrow---left"
+                            color={theme.colors.white}
+                            onPress={handleBack}
+                        />
+                        <Appbar.Content
+                            title={title}
+                            style={{
+                                marginLeft: -8,
+                            }}
+                            titleStyle={{
+                                color: theme.colors.white,
+                                fontSize: 18,
+                                fontFamily: 'Montserrat Regular',
+                            }}
+                            onPress={toggleControls}
+                        />
+                        <Appbar.Action
+                            icon={
+                                landscape
+                                    ? FullscreenExitIcon
+                                    : FullscreenEnterIcon
+                            }
+                            color={theme.colors.white}
+                            onPress={() => {
+                                rotateScreen();
                             }}
                         />
+                    </Appbar>
+                </Animated.View>
 
-                        <Animated.View
-                            pointerEvents={
-                                controlsState === ControlStates.Hidden
-                                    ? 'none'
-                                    : 'auto'
-                            }
+                <View
+                    style={{
+                        flex: 1,
+                        width,
+                    }}
+                >
+                    <TouchableWithoutFeedback onPress={toggleControls}>
+                        <View
                             style={{
-                                opacity: controlsOpacity,
+                                flex: 1,
+                                justifyContent: 'center',
+                                position: 'relative',
                             }}
                         >
-                            <Appbar.Header style={styles.appbarHeader}>
-                                <Appbar.Action
-                                    icon="arrow---left"
-                                    rippleColor="#fff"
-                                    color="#fff"
-                                    onPress={() => {
-                                        ScreenOrientation.lockAsync(
-                                            ScreenOrientation.OrientationLock
-                                                .PORTRAIT
-                                        );
-                                        togglePlay();
-                                        navigation.goBack();
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    zIndex: 13,
+                                    top: 0,
+                                    bottom: 0,
+                                    right: 0,
+                                    left: 0,
+                                    flexDirection: 'row',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        borderRadius: 1000,
+                                        width: height / 1.5,
+                                        height: height / 1.5,
+                                        overflow: 'hidden',
                                     }}
-                                />
-                                <Appbar.Content
-                                    title={title}
-                                    titleStyle={styles.appbarText}
-                                />
-
-                                <Appbar.Action
-                                    icon={() => (
-                                        <FullScreenIcon landscape={landscape} />
-                                    )}
-                                    rippleColor="#fff"
-                                    color="#fff"
-                                    onPress={() => {
-                                        rotateScreen(landscape);
-                                        setLandscape(!landscape);
-                                    }}
-                                />
-                            </Appbar.Header>
-                        </Animated.View>
-
-                        <Animated.View
-                            pointerEvents={
-                                controlsState === ControlStates.Hidden
-                                    ? 'none'
-                                    : 'auto'
-                            }
-                            style={{
-                                opacity: controlsOpacity,
-                                alignItems: 'center',
-                            }}
-                        >
-                            <View style={styles.controlButtons}>
-                                <Control callback={() => seekHandle(-seekTime)}>
-                                    <VideoBackwardIcon />
-                                </Control>
-                                <Control callback={togglePlay}>
-                                    {playbackState ===
-                                    PlaybackStates.Playing ? (
-                                        <VideoPauseIcon />
-                                    ) : (
-                                        <VideoPlayIcon />
-                                    )}
-                                </Control>
-                                <Control callback={() => seekHandle(seekTime)}>
-                                    <VideoForwardIcon />
-                                </Control>
-                            </View>
-
-                            <View style={styles.seekBar}>
-                                <Text
-                                    style={[
-                                        styles.textStyle,
-                                        {
-                                            width: 60,
-                                        },
-                                    ]}
                                 >
-                                    {getMMSSFromMillis(
-                                        playbackInstancePosition
-                                    )}
-                                </Text>
-                                <View style={styles.flex}>
-                                    <Slider
-                                        style={styles.slider}
-                                        thumbTintColor={sliderColor}
-                                        minimumTrackTintColor={sliderColor}
-                                        maximumTrackTintColor={'#eee'}
-                                        trackImage={iosTrackImage}
-                                        thumbImage={thumbImage}
-                                        value={getSeekSliderPosition()}
-                                        onValueChange={onSeekSliderValueChange}
-                                        onSlidingComplete={
-                                            onSeekSliderSlidingComplete
-                                        }
-                                        disabled={
-                                            playbackState ===
-                                                PlaybackStates.Loading ||
-                                            playbackState ===
-                                                PlaybackStates.Error
-                                        }
-                                    />
+                                    <TouchableNativeFeedback
+                                        onPress={() => {
+                                            var delta =
+                                                new Date().getTime() -
+                                                lastPressBackward;
+
+                                            console.log(
+                                                lastPressBackward,
+                                                delta
+                                            );
+
+                                            if (delta < 500) {
+                                                console.log('DOUBLE TAP');
+                                                seek(-1);
+                                                showingAnimation = Animated.timing(
+                                                    backwardOpacity,
+                                                    {
+                                                        toValue: 1,
+                                                        duration: 50,
+                                                        useNativeDriver: true,
+                                                    }
+                                                );
+                                                showingAnimation.start(() => {
+                                                    hideAnimation = Animated.timing(
+                                                        backwardOpacity,
+                                                        {
+                                                            toValue: 0,
+                                                            duration: 0,
+                                                            useNativeDriver: true,
+                                                        }
+                                                    );
+                                                    hideAnimation.start(() => {
+                                                        showingAnimation = Animated.timing(
+                                                            backwardOpacity,
+                                                            {
+                                                                toValue: 1,
+                                                                duration: 50,
+                                                                useNativeDriver: true,
+                                                            }
+                                                        );
+                                                        showingAnimation.start(
+                                                            () => {
+                                                                hideAnimation = Animated.timing(
+                                                                    backwardOpacity,
+                                                                    {
+                                                                        toValue: 0,
+                                                                        duration: 0,
+                                                                        useNativeDriver: true,
+                                                                    }
+                                                                );
+                                                                hideAnimation.start();
+                                                            }
+                                                        );
+                                                    });
+                                                });
+                                            }
+
+                                            setLastPressBackward(
+                                                new Date().getTime()
+                                            );
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                width: height / 1.5,
+                                                height: height / 1.5,
+                                            }}
+                                        >
+                                            <Animated.View
+                                                style={{
+                                                    width: height / 1.5,
+                                                    height: height / 1.5,
+                                                    // opacity: backwardOpacity,
+                                                }}
+                                                pointerEvents={
+                                                    hidden ? 'none' : 'auto'
+                                                }
+                                            >
+                                                <View
+                                                    style={{
+                                                        width: height / 1.5,
+                                                        height: height / 1.5,
+                                                        backgroundColor: 'red',
+                                                    }}
+                                                ></View>
+                                            </Animated.View>
+                                        </View>
+                                    </TouchableNativeFeedback>
                                 </View>
-
-                                <Text
-                                    style={[
-                                        styles.textStyle,
-                                        styles.durationText,
-                                    ]}
+                                <View
+                                    style={{
+                                        borderRadius: 1000,
+                                        width: height / 1.5,
+                                        height: height / 1.5,
+                                        overflow: 'hidden',
+                                    }}
                                 >
-                                    {getMMSSFromMillis(
-                                        playbackInstanceDuration
-                                    )}
-                                </Text>
+                                    <TouchableNativeFeedback
+                                        onPress={() => {
+                                            var delta =
+                                                new Date().getTime() -
+                                                lastPressForward;
+
+                                            console.log(
+                                                lastPressForward,
+                                                delta
+                                            );
+
+                                            if (delta < 500) {
+                                                console.log('DOUBLE TAP');
+                                                seek(1);
+                                                showingAnimation = Animated.timing(
+                                                    forwardOpacity,
+                                                    {
+                                                        toValue: 1,
+                                                        duration: 50,
+                                                        useNativeDriver: true,
+                                                    }
+                                                );
+                                                showingAnimation.start(() => {
+                                                    hideAnimation = Animated.timing(
+                                                        forwardOpacity,
+                                                        {
+                                                            toValue: 0,
+                                                            duration: 0,
+                                                            useNativeDriver: true,
+                                                        }
+                                                    );
+                                                    hideAnimation.start(() => {
+                                                        showingAnimation = Animated.timing(
+                                                            forwardOpacity,
+                                                            {
+                                                                toValue: 1,
+                                                                duration: 50,
+                                                                useNativeDriver: true,
+                                                            }
+                                                        );
+                                                        showingAnimation.start(
+                                                            () => {
+                                                                hideAnimation = Animated.timing(
+                                                                    forwardOpacity,
+                                                                    {
+                                                                        toValue: 0,
+                                                                        duration: 0,
+                                                                        useNativeDriver: true,
+                                                                    }
+                                                                );
+                                                                hideAnimation.start();
+                                                            }
+                                                        );
+                                                    });
+                                                });
+                                            }
+
+                                            setLastPressForward(
+                                                new Date().getTime()
+                                            );
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                width: height / 1.5,
+                                                height: height / 1.5,
+                                            }}
+                                        >
+                                            <Animated.View
+                                                style={{
+                                                    width: height / 1.5,
+                                                    height: height / 1.5,
+                                                    opacity: forwardOpacity,
+                                                }}
+                                                pointerEvents={
+                                                    hidden ? 'none' : 'auto'
+                                                }
+                                            >
+                                                <View
+                                                    style={{
+                                                        width: height / 1.5,
+                                                        height: height / 1.5,
+                                                        backgroundColor: 'red',
+                                                    }}
+                                                ></View>
+                                            </Animated.View>
+                                        </View>
+                                    </TouchableNativeFeedback>
+                                </View>
                             </View>
-                        </Animated.View>
+
+                            {error ? (
+                                <Text style={styles.errorContainer}>
+                                    {error}
+                                </Text>
+                            ) : loaded - progress < (playing ? 1000 : 5000) ? (
+                                <ActivityIndicator
+                                    size="large"
+                                    color={theme.colors.primary}
+                                />
+                            ) : null}
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+
+                <Animated.View
+                    style={{
+                        opacity: viewOpacity,
+                    }}
+                    pointerEvents={hidden ? 'none' : 'auto'}
+                >
+                    <View
+                        style={{
+                            alignItems: 'center',
+                            width,
+                        }}
+                    >
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                marginBottom: 8,
+                            }}
+                        >
+                            <IconButton
+                                size={32}
+                                onPress={() => seek(-1)}
+                                icon={BackwardIcon}
+                            />
+                            <IconButton
+                                size={32}
+                                onPress={togglePlayer}
+                                icon={playing ? PauseIcon : PlayIcon}
+                            />
+                            <IconButton
+                                size={32}
+                                onPress={() => seek(1)}
+                                icon={ForwardIcon}
+                            />
+                        </View>
+                        <View style={styles.bottomControls}>
+                            <Text style={styles.time}>
+                                {formatMillis(progress)}
+                            </Text>
+                            <View
+                                style={{
+                                    flex: 1,
+                                }}
+                            >
+                                <Slider
+                                    style={styles.slider}
+                                    thumbTintColor={theme.colors.primary}
+                                    minimumTrackTintColor={theme.colors.primary}
+                                    maximumTrackTintColor={'transparent'}
+                                    value={progress / duration || 0}
+                                    onSlidingComplete={slideComplete}
+                                />
+                                <Slider
+                                    style={{
+                                        flex: 1,
+                                    }}
+                                    thumbTintColor={'transparent'}
+                                    minimumTrackTintColor={theme.colors.gray}
+                                    maximumTrackTintColor={
+                                        theme.colors.disabled
+                                    }
+                                    value={loaded / duration || 0}
+                                />
+                            </View>
+                            <Text style={styles.time}>
+                                {formatMillis(duration)}
+                            </Text>
+                        </View>
                     </View>
-                </TouchableWithoutFeedback>
+                </Animated.View>
             </View>
+            <Video
+                ref={(component) => {
+                    player = component;
+                }}
+                rate={1.0}
+                volume={1.0}
+                isMuted={false}
+                resizeMode="contain"
+                shouldPlay={true}
+                isLooping
+                style={{ width, height }}
+                onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                usePoster={true}
+                posterSource={poster}
+            />
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, position: 'relative', backgroundColor: '#000' },
-    mainContainer: {
+const createStyles = (theme) => ({
+    container: {
         flex: 1,
+        backgroundColor: '#000',
+        position: 'relative',
+    },
+    controls: {
         position: 'absolute',
+        alignItems: 'center',
         top: 0,
+        bottom: 0,
         left: 0,
         right: 0,
-        bottom: 0,
+        zIndex: 1,
     },
-    innerContainer: {
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        flex: 1,
+    errorContainer: {
+        textAlign: 'center',
+        backgroundColor: theme.colors.red,
+        color: '#fff',
+        padding: 16,
+        margin: 8,
+        borderRadius: 4,
     },
-    appbarHeader: { backgroundColor: 'transparent' },
-    appbarText: { color: '#fff', marginLeft: -8 },
-    textStyle: {
-        color: '#FFF',
-        fontSize: 12,
-    },
-    slider: {
-        flex: 1,
-        marginHorizontal: -16,
-    },
-    durationText: {
-        width: 60,
-        textAlign: 'right',
-    },
-    controlButtons: {
+    bottomControls: {
         flexDirection: 'row',
-    },
-    flex: { flex: 1 },
-    seekBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 8,
-        marginBottom: 24,
-    },
-    centeredView: {
         justifyContent: 'center',
         alignItems: 'center',
-        flex: 1,
+        paddingHorizontal: 12,
+        paddingBottom: 12,
+    },
+    slider: {
         position: 'absolute',
         top: 0,
+        bottom: 0,
         left: 0,
         right: 0,
-        bottom: 0,
+        zIndex: 1,
+    },
+    time: {
+        width: 64,
+        textAlign: 'center',
+        color: theme.colors.white,
     },
 });
 
-export default withTheme(withDefaultProps(VideoPlayer, defaultProps));
+export default withTheme(NurikVideoPlayer);

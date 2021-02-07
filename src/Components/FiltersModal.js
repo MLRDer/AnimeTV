@@ -90,11 +90,10 @@ const FiltersModal = ({ visible, hideDialog, filters, setFilters, theme }) => {
 
     const handleClear = () => {
         hideDialog();
-
+        setFilters(new Object());
         setCategories(JSON.parse(JSON.stringify(cats)));
         setVideoQuality(null);
         setOnlySerial(false);
-        setFilters({});
     };
 
     // *** FILTERS - END *** //

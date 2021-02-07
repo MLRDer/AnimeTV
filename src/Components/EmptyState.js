@@ -25,7 +25,7 @@ const EmptyState = ({ refresh, text, theme }) => {
                     style={[
                         styles.button,
                         {
-                            borderColor: theme.colors.accent,
+                            borderColor: theme.colors.primary,
                         },
                     ]}
                     color="#ecf0f1"
@@ -40,9 +40,10 @@ const EmptyState = ({ refresh, text, theme }) => {
 
 const styles = StyleSheet.create({
     container: {
+        // flex: 1,
         alignItems: 'center',
-        flex: 1,
         justifyContent: 'center',
+        height: '100%',
     },
     image: {
         width: width / 3,

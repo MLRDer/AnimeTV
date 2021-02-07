@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SectionList } from 'react-native';
+import { View, StyleSheet, SectionList, Dimensions } from 'react-native';
 import {
     Appbar,
     Text,
@@ -17,6 +17,10 @@ import _ from 'lodash';
 import IconlyBold from '../../icons/IconlyBold';
 import AdmobBanner from '../../components/AdmobBanner';
 import NoConnection from '../../components/NoConnection';
+import SourcesLoading from '../../components/SourcesLoading';
+
+import Anime from '../../api';
+import Axios from 'axios';
 
 const PlayIcon = ({ color }) => (
     <IconlyBold
@@ -33,8 +37,15 @@ const PlayIcon = ({ color }) => (
 );
 
 const Seasons = ({ navigation, route, theme }) => {
-    const { episodes, image, id } = route.params;
+    const styles = createStyles(theme);
+
+    const source = Axios.CancelToken.source();
+
+    const { episodes, image, id, hdrezka } = route.params;
     const { isConnected } = useNetInfo();
+    const [sourcesLoading, setSourcesLoading] = useState(false);
+
+    const anime = new Anime(null, source);
 
     const epz = Object.entries(_.groupBy(episodes, 'season')).map((season) =>
         _.zipObject(['title', 'data'], season)
@@ -56,35 +67,56 @@ const Seasons = ({ navigation, route, theme }) => {
         }
     };
 
-    const openActionSheet = ({ sources, name, _id }) => {
-        const options = sources.map((source) => source.quality.toString());
+    const openActionSheet = async ({ sources, name, _id, season, episode }) => {
+        try {
+            let options, callback;
 
-        showActionSheetWithOptions(
-            {
-                options,
-                cancelButtonIndex: options.length,
-                withTitle: true,
-                title: 'Choose quality: ',
-                containerStyle: {
-                    backgroundColor: theme.colors.background,
-                },
-                textStyle: {
-                    color: theme.colors.text,
-                },
-                titleTextStyle: {
-                    color: theme.colors.text,
-                },
-            },
-            (buttonIndex) => {
-                sources[buttonIndex] &&
-                    openPlayer(
-                        name,
-                        sources[buttonIndex].url,
-                        _id,
-                        sources[buttonIndex]._id
-                    );
+            if (hdrezka) {
+                setSourcesLoading(true);
+
+                const sources = await anime.getSources(
+                    hdrezka,
+                    true,
+                    season,
+                    episode
+                );
+
+                options = sources.map((source) => source.quality);
+
+                callback = (index) =>
+                    sources[index] && openPlayer(name, sources[index].url);
+                setSourcesLoading(false);
+            } else {
+                options = sources.map((source) => source.quality.toString());
+
+                callback = (index) => {
+                    sources[index] &&
+                        openPlayer(
+                            name,
+                            sources[index].url,
+                            _id,
+                            sources[index]._id
+                        );
+                };
             }
-        );
+
+            showActionSheetWithOptions(
+                {
+                    options,
+                    withTitle: true,
+                    title: 'Choose quality: ',
+                    cancelButtonIndex: options.length,
+                    titleTextStyle: styles.actionSheetText,
+                    textStyle: styles.actionSheetText,
+                    containerStyle: styles.actionSheetContainer,
+                },
+                callback
+            );
+        } catch (error) {
+            setSourcesLoading(false);
+            console.log(error);
+            alert('Something went wrong! Try again later.');
+        }
     };
 
     const [visible, setVisible] = useState(false);
@@ -99,6 +131,8 @@ const Seasons = ({ navigation, route, theme }) => {
                 flex: 1,
             }}
         >
+            <SourcesLoading loading={sourcesLoading} />
+
             <Appbar.Header
                 style={{
                     backgroundColor: theme.colors.surface,
@@ -167,47 +201,50 @@ const Seasons = ({ navigation, route, theme }) => {
                         Season {title}
                     </Text>
                 )}
-                renderSectionFooter={() => (
-                    <View
-                        style={{
-                            flex: 1,
-                            alignItems: 'center',
-                        }}
-                    >
-                        <AdmobBanner />
-                    </View>
-                )}
             />
+
+            <View style={{}}>
+                <AdmobBanner width={Dimensions.get('window').width} />
+            </View>
+
             <NoConnection visible={visible} hideModal={hideModal} />
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    header: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        fontSize: 16,
-    },
-    item: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-    },
-    title: {
-        flex: 1,
-        fontSize: 16,
-    },
-    actions: {
-        flexDirection: 'row',
-    },
-    playIcon: {
-        margin: 0,
-    },
-});
+const createStyles = (theme) =>
+    StyleSheet.create({
+        header: {
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            fontSize: 16,
+            textAlign: 'center',
+        },
+        item: {
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            borderBottomWidth: 1,
+        },
+        title: {
+            flex: 1,
+            fontSize: 16,
+        },
+        actions: {
+            flexDirection: 'row',
+        },
+        playIcon: {
+            margin: 0,
+        },
+        actionSheetContainer: {
+            backgroundColor: theme.colors.background,
+        },
+        actionSheetText: {
+            color: theme.colors.text,
+        },
+    });
 
 const ConnectedApp = connectActionSheet(withTheme(Seasons));
 

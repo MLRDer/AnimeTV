@@ -6,7 +6,7 @@ import {
     ActivityIndicator,
     withTheme,
 } from 'react-native-paper';
-import { StyleSheet, ScrollView, Keyboard, View } from 'react-native';
+import { StyleSheet, Dimensions, Keyboard, View } from 'react-native';
 import AdmobBanner from '../../components/AdmobBanner';
 import ContentsSectionList from '../../components/ContentsSectionList';
 import WatchLoadingState from '../../components/WatchLoadingState';
@@ -43,8 +43,8 @@ const Search = ({ navigation, theme }) => {
     }, [value]);
 
     useEffect(() => {
-        Keyboard.addListener('keyboardDidShow', keyboardOpened);
-        Keyboard.addListener('keyboardDidHide', keyboardClosed);
+        Keyboard.addListener('keyboardDidShow', () => setVisible(false));
+        Keyboard.addListener('keyboardDidHide', () => setVisible(true));
 
         // cleanup function
         return () => {
@@ -53,12 +53,8 @@ const Search = ({ navigation, theme }) => {
         };
     }, []);
 
-    const keyboardOpened = () => setVisible(false);
-
-    const keyboardClosed = () => setVisible(true);
-
-    const handleSelect = (item) => {
-        navigation.navigate('Details', { id: item._id });
+    const handleSelect = (id) => {
+        navigation.navigate('Details', { id });
     };
 
     const scrollToTop = () => {
@@ -119,37 +115,24 @@ const Search = ({ navigation, theme }) => {
             <WatchLoadingState loading={loading} />
 
             {data && data.length ? (
-                <>
-                    <ContentsSectionList
-                        handleSelect={handleSelect}
-                        reference={(component) => {
-                            sectionlist = component;
-                        }}
-                        containerStyle={{
-                            paddingBottom: 116,
-                        }}
-                        sections={data}
-                        showAd={false}
-                    />
-
-                    {visible ? (
-                        <View
-                            style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                padding: 8,
-                                paddingBottom: 0,
-                            }}
-                        >
-                            <AdmobBanner />
-                        </View>
-                    ) : null}
-                </>
-            ) : visible ? (
-                <ScrollView style={styles.largeAdContainer}>
-                    <AdmobBanner large />
-                </ScrollView>
+                <ContentsSectionList
+                    handleSelect={handleSelect}
+                    reference={(component) => {
+                        sectionlist = component;
+                    }}
+                    data={data}
+                />
             ) : null}
+
+            <View
+                style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    opacity: visible ? 1 : 0,
+                }}
+            >
+                <AdmobBanner width={Dimensions.get('window').width} />
+            </View>
         </>
     );
 };

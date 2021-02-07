@@ -1,15 +1,71 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, RefreshControl, StyleSheet } from 'react-native';
+import { View, RefreshControl, StyleSheet, Dimensions } from 'react-native';
 import { Appbar, withTheme } from 'react-native-paper';
+import Carousel from 'react-native-snap-carousel';
+
 import CollectionsSectionList from '../../components/CollectionsSectionList';
 import HomeLoadingState from '../../components/HomeLoadingState';
-import SwipableViewStack from '../../components/CardStack';
 import EmptyState from '../../components/EmptyState';
 import StackItem from '../../components/StackItem';
 import Api from '../../api';
 import Axios from 'axios';
 
-const Home = ({ navigation, theme }) => {
+const { width, height } = Dimensions.get('window');
+
+class ListHeaderComponent extends React.PureComponent {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <>
+                {this.props.data &&
+                this.props.data.card &&
+                this.props.data.card.length ? (
+                    <View style={styles.container} key="CardStack">
+                        <Carousel
+                            containerCustomStyle={{
+                                height: width / 1.7 + 20,
+                            }}
+                            data={this.props.data.card}
+                            renderItem={(element) => {
+                                return (
+                                    <StackItem
+                                        onPress={() =>
+                                            this.props.handleSelect(
+                                                element.item._id
+                                            )
+                                        }
+                                        title={element.item.title}
+                                        image={element.item.image}
+                                        index={element.index}
+                                    />
+                                );
+                            }}
+                            slideStyle={{ padding: 12 }}
+                            initialNumToRender={24}
+                            loopClonesPerSide={8}
+                            sliderWidth={width}
+                            itemWidth={width}
+                            layout="tinder"
+                            layoutCardOffset={12}
+                            loop
+                            sliderHeight={height}
+                            autoplay
+                            firstItem={0}
+                            useScrollView={false}
+                            autoplayDelay={5000}
+                            autoplayInterval={5000}
+                        />
+                    </View>
+                ) : null}
+            </>
+        );
+    }
+}
+
+const Home = ({ navigation, theme, active }) => {
     let sectionlist = null;
     const source = Axios.CancelToken.source();
 
@@ -52,28 +108,13 @@ const Home = ({ navigation, theme }) => {
             });
     };
 
-    const handleSelect = (item) => {
-        navigation.navigate('Details', { id: item._id });
+    const handleSelect = (id) => {
+        navigation.navigate('Details', { id });
     };
 
     const openCollection = (id) => {
         navigation.navigate('Collection', { id });
     };
-
-    const ListHeaderComponent = () => (
-        <>
-            {data && data.card && data.card.length ? (
-                <View style={styles.container} key="CardStack">
-                    <SwipableViewStack
-                        data={data.card}
-                        renderItem={(element) => <StackItem {...element} />}
-                        onItemClicked={(element) => handleSelect(element)}
-                        stackSpacing={-20}
-                    />
-                </View>
-            ) : null}
-        </>
-    );
 
     const NoData = () => {
         if (data && data.collections && data.collections.length) return null;
@@ -121,7 +162,12 @@ const Home = ({ navigation, theme }) => {
                             onRefresh={onRefresh}
                         />
                     }
-                    ListHeaderComponent={<ListHeaderComponent />}
+                    ListHeaderComponent={
+                        <ListHeaderComponent
+                            handleSelect={handleSelect}
+                            data={data}
+                        />
+                    }
                     sections={data.collections}
                 />
             ) : null}
@@ -134,9 +180,7 @@ const Home = ({ navigation, theme }) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        marginBottom: 64,
         zIndex: 100,
-        marginTop: -4,
     },
     heading: {
         paddingHorizontal: 16,

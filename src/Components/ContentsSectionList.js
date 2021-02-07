@@ -1,45 +1,48 @@
-import React from 'react';
-import {
-    StyleSheet,
-    SectionList,
-    View,
-    Dimensions,
-    Animated,
-} from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Dimensions, FlatList } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import FlatlistItem from './FlatlistItem';
-import AdmobBanner from './AdmobBanner';
 
-const ContentsSectionList = ({
-    sections,
+const ContentsSectionListTest = ({
+    data,
+    loading,
     refreshControl,
-    reference,
-    ListHeaderComponent,
+    onEndReached,
     handleSelect,
-    onScroll,
-    containerStyle,
-    showAd = true,
 }) => {
     const { width } = Dimensions.get('window');
+    const [height, setHeight] = useState(0);
 
     const itemWidth = (width - 16) / 2;
     const itemHeight = itemWidth * 1.5;
 
-    const renderItem = ({ section, index }) => {
-        const numColumns = 2;
+    const onLayout = ({
+        nativeEvent: {
+            layout: { height },
+        },
+    }) => {
+        setHeight(height);
+    };
 
-        if (index % numColumns !== 0) return null;
+    const onEndReachedThreshold = () => {
+        return 0.3;
+        return height ? (width * (3 / 4)) / height : 0;
+    };
 
-        const items = [];
-
-        for (let i = index; i < index + numColumns; i++) {
-            if (i >= section.data.length) {
-                break;
-            }
-
-            const item = section.data[i];
-
-            items.push(
+    return (
+        <FlatList
+            data={data}
+            onLayout={onLayout}
+            numColumns={2}
+            refreshControl={refreshControl}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.container}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={onEndReachedThreshold()}
+            keyExtractor={(item, index) => item._id + index}
+            renderItem={({ item, index }) => (
                 <FlatlistItem
+                    index={index}
                     key={item._id}
                     width={itemWidth}
                     height={itemHeight}
@@ -52,32 +55,21 @@ const ContentsSectionList = ({
                     image={item.image}
                     rating={item.rating}
                     title={item.title}
-                    onPress={handleSelect}
+                    onPress={() => handleSelect(item._id)}
                 />
-            );
-        }
-
-        return <View style={styles.row}>{items}</View>;
-    };
-
-    return (
-        <SectionList
-            onScroll={onScroll}
-            ref={reference}
-            refreshControl={refreshControl}
-            ListHeaderComponent={ListHeaderComponent}
-            maxToRenderPerBatch={5}
-            initialNumToRender={5}
-            windowSize={8}
-            sections={sections}
-            style={{ flexGrow: 0 }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.container, containerStyle]}
-            keyExtractor={(item, index) => item._id + index}
-            renderItem={renderItem}
-            renderSectionFooter={() =>
-                showAd ? <AdmobBanner key="ad" /> : null
-            }
+            )}
+            ListFooterComponent={() => {
+                return (
+                    <View
+                        style={{
+                            padding: 24,
+                            opacity: loading ? 1 : 0,
+                        }}
+                    >
+                        <ActivityIndicator size="small" />
+                    </View>
+                );
+            }}
         />
     );
 };
@@ -85,10 +77,8 @@ const ContentsSectionList = ({
 const styles = StyleSheet.create({
     container: {
         padding: 8,
-    },
-    row: {
-        flexDirection: 'row',
+        paddingBottom: 96,
     },
 });
 
-export default ContentsSectionList;
+export default ContentsSectionListTest;

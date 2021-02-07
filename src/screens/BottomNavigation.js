@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BottomNavigation, withTheme } from 'react-native-paper';
 import Home from './Home';
 import Watch from './Watch';
 import Search from './Search';
-import Downloads from './Downloads';
-import Profile from './Profile';
 
 const routes = [
     { key: 'home', title: 'Home', icon: 'home' },

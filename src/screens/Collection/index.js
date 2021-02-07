@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dimensions, Share, View } from 'react-native';
 import { Appbar, withTheme } from 'react-native-paper';
 import ContentsSectionList from '../../components/ContentsSectionList';
+import AdmobBanner from '../../components/AdmobBanner';
 import WatchLoadingState from '../../components/WatchLoadingState';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import Api from '../../api';
@@ -34,8 +35,6 @@ const onShare = async (id) => {
 const Collection = ({ navigation, route, theme }) => {
     const source = Axios.CancelToken.source();
 
-    console.log(theme.colors.shimmerColors);
-
     const { id } = route.params;
 
     const [collection, setCollection] = useState({});
@@ -56,8 +55,8 @@ const Collection = ({ navigation, route, theme }) => {
         };
     }, [id]);
 
-    const handleSelect = (item) => {
-        navigation.navigate('Details', { id: item._id });
+    const handleSelect = (id) => {
+        navigation.navigate('Details', { id });
     };
 
     const goBack = () => {
@@ -114,8 +113,18 @@ const Collection = ({ navigation, route, theme }) => {
                 <ContentsSectionList
                     handleSelect={handleSelect}
                     sections={[data]}
+                    data={data.data}
                 />
             )}
+
+            <View
+                style={{
+                    position: 'absolute',
+                    bottom: 0,
+                }}
+            >
+                <AdmobBanner width={Dimensions.get('window').width} />
+            </View>
         </View>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     StyleSheet,
@@ -7,6 +7,7 @@ import {
     ScrollView,
     Dimensions,
     Share,
+    RefreshControl,
 } from 'react-native';
 import {
     ActionSheetProvider,
@@ -14,23 +15,26 @@ import {
     useActionSheet,
 } from '@expo/react-native-action-sheet';
 import { Appbar, Text, Button, withTheme } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import { useNetInfo } from '@react-native-community/netinfo';
 import RatingStars from '../../components/RatingStars';
 import NoConnection from '../../components/NoConnection';
 import AdmobBanner from '../../components/AdmobBanner';
 import DetailsLoadingState from '../../components/DetailsLoadingState';
+import SourcesLoading from '../../components/SourcesLoading';
 import Anime from '../../api';
 import Axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const onShare = async (id) => {
+const onShare = async (id, name) => {
     try {
         await Share.share(
             {
                 message: `https://cassette.muhammadjanov.uz/movie/${id}`,
             },
-            { dialogTitle: 'Cassette 📼' }
+            { dialogTitle: name }
         );
     } catch (error) {
         alert(error.message);
@@ -38,11 +42,16 @@ const onShare = async (id) => {
 };
 
 const Details = ({ navigation, route, theme }) => {
+    const styles = createStyles(theme);
     const source = Axios.CancelToken.source();
 
     const id = route.params.id;
 
     const { isConnected } = useNetInfo();
+    const [refreshing, setRefreshing] = useState(null);
+    const [dynamicSources, setDynamicSources] = useState(null);
+    const [adLoaded, setAdLoaded] = useState(false);
+    const [sourcesLoading, setSourcesLoading] = useState(false);
 
     const { showActionSheetWithOptions } = useActionSheet();
     const [details, setDetails] = useState({});
@@ -51,17 +60,25 @@ const Details = ({ navigation, route, theme }) => {
 
     const setData = (data) => {
         setDetails({ ...details, ...data });
+        setRefreshing(false);
     };
 
-    const anime = new Anime(setData, source);
+    const api = new Anime(setData, source);
 
     useEffect(() => {
-        anime.getEpisodes(id);
+        api.getEpisodes(id);
 
         return () => {
             source.cancel();
         };
     }, [id]);
+
+    const refresh = () => {
+        setRefreshing(true);
+        api.getEpisodes(id, false);
+    };
+
+    const onRefresh = useCallback(refresh, [refreshing]);
 
     const openPlayer = (source, episodeId, sourceId) => {
         if (isConnected) {
@@ -78,36 +95,57 @@ const Details = ({ navigation, route, theme }) => {
         }
     };
 
-    const openActionSheet = () => {
-        const options = data.episodes[0].sources.map((source) =>
-            source.quality.toString()
-        );
+    const openActionSheet = async () => {
+        try {
+            let options, callback;
 
-        showActionSheetWithOptions(
-            {
-                options,
-                cancelButtonIndex: options.length,
-                withTitle: true,
-                title: 'Choose quality: ',
-                containerStyle: {
-                    backgroundColor: theme.colors.background,
-                },
-                textStyle: {
-                    color: theme.colors.text,
-                },
-                titleTextStyle: {
-                    color: theme.colors.text,
-                },
-            },
-            (buttonIndex) => {
-                data.episodes[0].sources[buttonIndex] &&
+            if (data.hdrezka) {
+                setSourcesLoading(true);
+
+                let sources;
+                if (!dynamicSources) {
+                    sources = await api.getSources(data.hdrezka);
+                    setDynamicSources(sources);
+                } else {
+                    sources = dynamicSources;
+                }
+
+                options = sources.map((source) => source.quality);
+
+                callback = (index) =>
+                    sources[index] && openPlayer(sources[index].url);
+                setSourcesLoading(false);
+            } else {
+                options = data.episodes[0].sources.map((source) =>
+                    source.quality.toString()
+                );
+
+                callback = (index) =>
+                    data.episodes[0].sources[index] &&
                     openPlayer(
-                        data.episodes[0].sources[buttonIndex].url,
+                        data.episodes[0].sources[index].url,
                         data.episodes[0]._id,
-                        data.episodes[0].sources[buttonIndex]._id
+                        data.episodes[0].sources[index]._id
                     );
             }
-        );
+
+            showActionSheetWithOptions(
+                {
+                    options,
+                    withTitle: true,
+                    title: 'Choose quality: ',
+                    cancelButtonIndex: options.length,
+                    titleTextStyle: styles.actionSheetText,
+                    textStyle: styles.actionSheetText,
+                    containerStyle: styles.actionSheetContainer,
+                },
+                callback
+            );
+        } catch (error) {
+            setSourcesLoading(false);
+            console.log(error);
+            alert('Something went wrong! Try again later.');
+        }
     };
 
     const [visible, setVisible] = useState(false);
@@ -132,6 +170,8 @@ const Details = ({ navigation, route, theme }) => {
                 },
             ]}
         >
+            <SourcesLoading loading={sourcesLoading} />
+
             <Appbar.Header
                 style={{
                     backgroundColor: theme.colors.surface,
@@ -144,7 +184,10 @@ const Details = ({ navigation, route, theme }) => {
                         marginLeft: -8,
                     }}
                 />
-                <Appbar.Action icon="send" onPress={() => onShare(id)} />
+                <Appbar.Action
+                    icon="send"
+                    onPress={() => onShare(id, data.title)}
+                />
             </Appbar.Header>
 
             <DetailsLoadingState loading={loading} />
@@ -153,25 +196,38 @@ const Details = ({ navigation, route, theme }) => {
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollViewContainer}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                        />
+                    }
                 >
                     <View style={styles.backgroundImageContainer}>
                         <ImageBackground
-                            blurRadius={3}
+                            blurRadius={2}
                             source={{ uri: data.poster }}
                             style={styles.backgroundImage}
                         >
-                            <Image
-                                source={{ uri: data.poster }}
-                                style={styles.poster}
-                            ></Image>
-                            <Text style={styles.movieTitle}>{data.title}</Text>
-                            <Text style={styles.ratingText}>
-                                IMDb {data.rating}
-                            </Text>
-                            <RatingStars
-                                style={styles.ratingStars}
-                                value={data.rating}
-                            />
+                            <LinearGradient
+                                colors={['transparent', theme.colors.accent]}
+                                style={styles.linearGradient}
+                            >
+                                <Image
+                                    source={{ uri: data.poster }}
+                                    style={styles.poster}
+                                ></Image>
+                                <Text style={styles.movieTitle}>
+                                    {data.title}
+                                </Text>
+                                <Text style={styles.ratingText}>
+                                    IMDb {data.rating.toFixed(1)}
+                                </Text>
+                                <RatingStars
+                                    style={styles.ratingStars}
+                                    value={data.rating}
+                                />
+                            </LinearGradient>
                         </ImageBackground>
                     </View>
 
@@ -203,22 +259,23 @@ const Details = ({ navigation, route, theme }) => {
                                         title: data.title,
                                         image: data.image,
                                         id: data._id,
+                                        hdrezka: data.hdrezka,
                                     })
                                 }
                                 style={styles.watchButton}
                                 mode="contained"
-                                color={theme.colors.accent}
+                                color={theme.colors.primary}
                                 loading={loading}
                             >
-                                Seasons
+                                Series
                             </Button>
                         ) : (
                             <Button
                                 disabled={
+                                    !data.hdrezka &&
                                     !(
-                                        data &&
-                                        data.episodes &&
-                                        data.episodes.length
+                                        data.episodes.length &&
+                                        data.episodes[0].sources.length
                                     )
                                 }
                                 onPress={() => {
@@ -226,7 +283,7 @@ const Details = ({ navigation, route, theme }) => {
                                 }}
                                 style={styles.watchButton}
                                 mode="contained"
-                                color={theme.colors.accent}
+                                color={theme.colors.primary}
                                 loading={loading}
                             >
                                 Watch
@@ -234,7 +291,9 @@ const Details = ({ navigation, route, theme }) => {
                         )}
 
                         <View style={styles.admobContainer}>
-                            <AdmobBanner style={styles.admob} />
+                            <AdmobBanner
+                                width={Dimensions.get('window').width - 40}
+                            />
                         </View>
 
                         <View>
@@ -266,69 +325,79 @@ export default ({ navigation, route }) => {
     );
 };
 
-const styles = StyleSheet.create({
-    poster: {
-        width: width / 3,
-        height: width / 2,
-        borderRadius: 4,
-    },
-    scrollViewContainer: { paddingBottom: 24 },
-    backgroundImageContainer: {
-        borderRadius: 8,
-        margin: 16,
-        overflow: 'hidden',
-    },
-    backgroundImage: {
-        flex: 1,
-        padding: 32,
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    movieTitle: {
-        fontSize: 16,
-        marginTop: 32,
-        color: '#fff',
-        textAlign: 'center',
-        paddingHorizontal: 8,
-    },
-    ratingText: {
-        fontSize: 16,
-        marginTop: 8,
-        color: '#fff',
-    },
-    ratingStars: {
-        marginTop: 12,
-    },
-    container: { paddingHorizontal: 20 },
-    originalTitle: {
-        fontSize: 16,
-        fontFamily: 'Montserrat SemiBold',
-    },
-    categories: { fontSize: 14, marginTop: 8 },
-    watchButton: {
-        marginTop: 16,
-        flex: 1,
-        elevation: 0,
-    },
-    admobContainer: {
-        backgroundColor: 'transparent',
-        alignItems: 'center',
-        padding: 0,
-        margin: 0,
-        borderRadius: 4,
-        marginTop: 16,
-    },
-    admob: {
-        margin: 0,
-        width: width - 40,
-    },
-    descriptionHeadline: {
-        fontSize: 16,
-        marginTop: 16,
-        fontFamily: 'Montserrat SemiBold',
-    },
-    description: {
-        marginTop: 8,
-        lineHeight: 20,
-    },
-});
+const createStyles = (theme) =>
+    StyleSheet.create({
+        poster: {
+            width: width / 3,
+            height: width / 2,
+            borderRadius: 4,
+        },
+        scrollViewContainer: { paddingBottom: 24 },
+        backgroundImageContainer: {
+            borderRadius: 8,
+            margin: 16,
+            overflow: 'hidden',
+        },
+        backgroundImage: {
+            flex: 1,
+            flexDirection: 'column',
+            alignItems: 'center',
+        },
+        linearGradient: {
+            flex: 1,
+            width: '100%',
+            padding: 32,
+            flexDirection: 'column',
+            alignItems: 'center',
+        },
+        movieTitle: {
+            fontSize: 16,
+            marginTop: 32,
+            color: '#fff',
+            textAlign: 'center',
+            paddingHorizontal: 8,
+        },
+        ratingText: {
+            fontSize: 16,
+            marginTop: 8,
+            color: '#fff',
+        },
+        ratingStars: {
+            marginTop: 12,
+        },
+        container: { paddingHorizontal: 20 },
+        originalTitle: {
+            fontSize: 16,
+            fontFamily: 'Montserrat SemiBold',
+        },
+        categories: { fontSize: 14, marginTop: 8 },
+        watchButton: {
+            marginTop: 16,
+            flex: 1,
+            elevation: 0,
+        },
+        admobContainer: {
+            backgroundColor: 'transparent',
+            alignItems: 'center',
+            padding: 0,
+            margin: 0,
+            borderRadius: 4,
+            marginTop: 16,
+            overflow: 'hidden',
+        },
+        descriptionHeadline: {
+            fontSize: 16,
+            marginTop: 16,
+            fontFamily: 'Montserrat SemiBold',
+        },
+        description: {
+            marginTop: 8,
+            lineHeight: 20,
+        },
+        actionSheetContainer: {
+            backgroundColor: theme.colors.background,
+        },
+        actionSheetText: {
+            color: theme.colors.text,
+        },
+    });

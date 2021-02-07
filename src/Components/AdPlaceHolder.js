@@ -16,94 +16,73 @@ const getLink = () =>
         Math.floor(Math.random() * Object.values(telegramChannels).length)
     ];
 
-const AddPlaceHolder = ({ style, large, extraData, theme }) => {
-    const logoSize = large ? 96 : 64;
+const AddPlaceHolder = ({ width, theme }) => {
+    const styles = createStyles(theme, width);
 
     return (
-        <View
-            style={[
-                styles.container,
-                style,
-                {
-                    borderWidth: 0,
-                    height: large ? 250 : 100,
-                    padding: large ? 32 : 16,
-                    justifyContent: large ? 'flex-start' : 'center',
-                },
-            ]}
-        >
-            <View
-                style={{
-                    flexDirection: large ? 'column' : 'row',
-                }}
-            >
-                <View
-                    style={{
-                        justifyContent: 'center',
-                        alignItems: 'center',
+        <View style={styles.container}>
+            <View style={styles.logoContainer}>
+                <Image
+                    style={styles.telegramLogo}
+                    source={require('../../assets/telegram_logo.png')}
+                />
+            </View>
+            <View style={styles.content}>
+                <Text style={styles.text}>Join our Telegram channel!</Text>
+                <Button
+                    color={theme.colors.white}
+                    mode="contained"
+                    labelStyle={styles.buttonLabel}
+                    style={styles.button}
+                    onPress={() => {
+                        Linking.openURL(getLink());
                     }}
                 >
-                    <Image
-                        style={[
-                            styles.telegramLogo,
-                            { width: logoSize, height: logoSize },
-                        ]}
-                        source={require('../../assets/telegram_logo.png')}
-                    />
-                </View>
-                <View
-                    style={[
-                        {
-                            alignItems: 'center',
-                            marginTop: large ? 24 : 0,
-                        },
-                        large ? null : { flex: 1 },
-                    ]}
-                >
-                    <Text
-                        style={{
-                            marginBottom: 8,
-                            color: '#fff',
-                            textAlign: 'center',
-                        }}
-                    >
-                        Join our Telegram channel!
-                    </Text>
-                    <Button
-                        color={'#fff'}
-                        mode="contained"
-                        labelStyle={{
-                            color: '#31A8DC',
-                        }}
-                        style={{
-                            elevation: 0,
-                            marginTop: large ? 4 : 0,
-                        }}
-                        onPress={() => {
-                            Linking.openURL(getLink());
-                        }}
-                    >
-                        Open Channel
-                    </Button>
-                </View>
+                    Open Channel
+                </Button>
             </View>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        margin: 4,
-        marginVertical: 8,
-        borderRadius: 4,
-        overflow: 'hidden',
-        width: width - 24,
-        backgroundColor: '#31A8DC',
-    },
-    telegramLogo: {
-        marginLeft: 8,
-        justifyContent: 'center',
-    },
-});
+const createStyles = (theme, width) =>
+    StyleSheet.create({
+        container: {
+            width,
+            backgroundColor: theme.colors.telegram,
+            height: 88,
+            padding: 12,
+            justifyContent: 'center',
+            flexDirection: 'row',
+        },
+        logoContainer: {
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        telegramLogo: {
+            marginLeft: 32,
+            justifyContent: 'center',
+            width: 56,
+            height: 56,
+        },
+        content: {
+            alignItems: 'center',
+            marginTop: 0,
+            flex: 1,
+        },
+        text: {
+            marginBottom: 8,
+            textAlign: 'center',
+            color: theme.colors.white,
+        },
+        button: {
+            elevation: 0,
+            marginTop: 0,
+        },
+        buttonLabel: {
+            color: theme.colors.telegram,
+            fontSize: 12,
+        },
+    });
 
 export default withTheme(AddPlaceHolder);

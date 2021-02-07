@@ -4,6 +4,7 @@ import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import IconlyBold from '../../icons/IconlyBold';
 
 const ICON_COLOR = '#FFF';
+
 const style = StyleSheet.create({
     iconStyle: {
         textAlign: 'center',
@@ -18,7 +19,7 @@ export const PlayIcon = () => (
         style={[
             style.iconStyle,
             {
-                marginLeft: 2,
+                marginLeft: 4,
                 marginTop: 0,
             },
         ]}
@@ -37,7 +38,12 @@ export const ForwardIcon = () => (
         name="forward"
         size={24}
         color={ICON_COLOR}
-        style={style.iconStyle}
+        style={[
+            style.iconStyle,
+            {
+                marginLeft: 4,
+            },
+        ]}
     />
 );
 export const BackwardIcon = () => (
@@ -45,13 +51,19 @@ export const BackwardIcon = () => (
         name="backward"
         size={24}
         color={ICON_COLOR}
-        style={style.iconStyle}
+        style={[
+            style.iconStyle,
+            {
+                marginLeft: -4,
+            },
+        ]}
     />
 );
 
-export const Spinner = () => (
-    <ActivityIndicator color={ICON_COLOR} size="large" />
+export const Spinner = ({ color }) => (
+    <ActivityIndicator color={color} size="large" />
 );
+
 export const FullscreenEnterIcon = () => (
     <FontAwesome5
         fadeDuration={0}

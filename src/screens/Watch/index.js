@@ -5,20 +5,23 @@ import { TabBar, TabView } from 'react-native-tab-view';
 import FiltersModal from '../../components/FiltersModal';
 import Contents from '../../components/Contents';
 
-const initialLayout = { width: Dimensions.get('window').width };
-
 const Watch = ({ navigation, theme }) => {
     const [index, setIndex] = React.useState(0);
-    const [filters, setFilters] = useState({});
+    const [filters, setFilters1] = useState({});
+
+    const setFilters = (filter) => {
+        setFilters1(filter);
+    };
 
     const [visible, setVisible] = React.useState(false);
     const [routes] = React.useState([
         { key: 'movie', title: 'Movies' },
         { key: 'anime', title: 'Animes' },
+        { key: 'cartoon', title: 'Cartoons' },
     ]);
 
-    const handleSelect = (item) => {
-        navigation.navigate('Details', { id: item._id });
+    const handleSelect = (id) => {
+        navigation.navigate('Details', { id });
     };
 
     const renderTabBar = (props) => (
@@ -31,9 +34,7 @@ const Watch = ({ navigation, theme }) => {
             indicatorStyle={{
                 backgroundColor: theme.colors.text,
             }}
-            renderLabel={({ route, focused }) => (
-                <Text style={{ margin: 4 }}>{route.title}</Text>
-            )}
+            renderLabel={({ route, focused }) => <Text>{route.title}</Text>}
         />
     );
 
@@ -50,6 +51,16 @@ const Watch = ({ navigation, theme }) => {
                     />
                 );
             case 'anime':
+                return (
+                    <Contents
+                        type={route.key}
+                        setFilters={setFilters}
+                        filters={filters}
+                        handleSelect={handleSelect}
+                        jumpTo={jumpTo}
+                    />
+                );
+            case 'cartoon':
                 return (
                     <Contents
                         type={route.key}
@@ -85,20 +96,16 @@ const Watch = ({ navigation, theme }) => {
                 hideDialog={hideDialog}
             />
             <TabView
+                initialLayout={{ width: Dimensions.get('window').width }}
                 renderTabBar={renderTabBar}
                 navigationState={{ index, routes }}
                 renderScene={renderScene}
                 onIndexChange={setIndex}
-                initialLayout={initialLayout}
+                removeClippedSubviews
+                lazy
             />
         </>
     );
 };
-
-const styles = StyleSheet.create({
-    scene: {
-        flex: 1,
-    },
-});
 
 export default withTheme(Watch);

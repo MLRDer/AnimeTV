@@ -53,20 +53,19 @@ const DetailsLoadingState = ({ loading, theme }) => {
             <ShimmerPlaceholder
                 style={{
                     borderRadius: 4,
-                    margin: 20,
-
+                    margin: 16,
                     marginVertical: 8,
                     marginTop: 16,
                 }}
                 width={width - 40}
-                height={100}
+                height={88}
                 shimmerWidthPercent={1.3}
                 shimmerColors={theme.colors.shimmerColors}
             />
 
             <View
                 style={{
-                    marginTop: 8,
+                    marginTop: 0,
                     margin: 20,
                 }}
             >

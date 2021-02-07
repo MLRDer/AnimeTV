@@ -164,22 +164,6 @@ const Settings = ({ navigation, theme }) => {
                         </TouchableWithoutFeedback>
                     </View>
                 </View>
-
-                <View
-                    style={{
-                        backgroundColor: theme.colors.surface,
-                        padding: 16,
-                        marginTop: 16,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 16,
-                        }}
-                    >
-                        About
-                    </Text>
-                </View>
             </ScrollView>
         </>
     );
@@ -191,7 +175,8 @@ const styles = StyleSheet.create({
         height: imageSize,
         borderColor: disabled,
         borderWidth: 2,
-        borderRadius: 2,
+        borderRadius: 8,
+        overflow: 'hidden',
     }),
     active: (primary) => ({
         borderColor: primary,
@@ -201,6 +186,7 @@ const styles = StyleSheet.create({
         height: width / 3,
         marginTop: 8,
         marginBottom: 24,
+        borderRadius: 24,
     },
     heading: {
         fontSize: 20,

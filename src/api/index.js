@@ -1,7 +1,6 @@
 import axios from 'axios';
 import baseURL from './constants';
 import _ from 'lodash';
-import Axios from 'axios';
 
 const api = axios.create({ baseURL: baseURL.baseURL });
 
@@ -10,25 +9,46 @@ class Api {
         this.stateCallback = stateCallback;
         this.filters = filters;
         this.api = api;
-        this.source = source ? source : Axios.CancelToken.source();
+        this.source = source ? source : axios.CancelToken.source();
     }
 
-    getAll = (loading = true) => {
-        this.stateCallback({
-            loading,
-        });
+    addAds(data) {
+        let four = true;
+        const newArr = [];
+        while (data.length) {
+            const limit = four ? 4 : 6;
+            let row = data.splice(0, limit);
+            row.push({
+                ad: true,
+                _id: `ad-poster-${Math.random() * 1000}`,
+            });
+            newArr.push(row);
+            four = !four;
+        }
+
+        return _.flatten(newArr);
+    }
+
+    getAll = (filters, more = false, oldData) => {
+        !more &&
+            this.stateCallback({
+                loading: true,
+            });
 
         this.api
             .get('animes', {
-                params: this.filters,
+                params: filters,
                 cancelToken: this.source.token,
             })
-            .then(({ data: { data } }) => {
+            .then(({ data: { data, count } }) => {
+                let newData = data;
+
+                if (more) newData = [...oldData, ...data];
+
                 this.stateCallback({
                     loading: false,
-                    data: _.chunk(data, 4).map((el) =>
-                        _.zipObject(['data'], [el])
-                    ),
+                    data: newData,
+                    count,
                 });
             })
             .catch((error) => {
@@ -40,19 +60,20 @@ class Api {
             });
     };
 
-    getEpisodes = (id) => {
-        this.stateCallback({
-            loading: true,
-        });
+    getEpisodes = (id, loading = true) => {
+        loading &&
+            this.stateCallback({
+                loading: true,
+            });
 
         this.api
             .get(`animes/${id}/episodes`, {
                 cancelToken: this.source.token,
             })
-            .then((data) => {
+            .then(({ data: { data } }) => {
                 this.stateCallback({
                     loading: false,
-                    data: data.data.data,
+                    data: data,
                 });
             })
             .catch((error) => {
@@ -62,6 +83,25 @@ class Api {
                     error: error.responce,
                 });
             });
+    };
+
+    getSources = async (id, isSerial, season, episode) => {
+        const {
+            data: { data },
+        } = await this.api.post(
+            `animes/hdsources`,
+            {
+                id,
+                isSerial,
+                season,
+                episode,
+            },
+            {
+                cancelToken: this.source.token,
+            }
+        );
+
+        return data;
     };
 
     getHome = (loading = true) => {
@@ -98,12 +138,21 @@ class Api {
             .get(`collections/${id}`, {
                 cancelToken: this.source.token,
             })
-            .then((data) => {
-                this.stateCallback({
-                    loading: false,
-                    data: data.data.data,
-                });
-            })
+            .then(
+                ({
+                    data: {
+                        data: { title, data },
+                    },
+                }) => {
+                    this.stateCallback({
+                        loading: false,
+                        data: {
+                            title,
+                            data: data,
+                        },
+                    });
+                }
+            )
             .catch((error) => {
                 console.log('ERROR: ', error);
                 this.stateCallback({
@@ -123,14 +172,11 @@ class Api {
                 params: {
                     search: term,
                 },
-                cancelToken: this.source.token,
             })
             .then(({ data }) => {
                 this.stateCallback({
                     loading: false,
-                    data: _.chunk(data, 4).map((el) =>
-                        _.zipObject(['data'], [el])
-                    ),
+                    data,
                 });
             })
             .catch((error) => {

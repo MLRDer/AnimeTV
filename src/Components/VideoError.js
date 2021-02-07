@@ -12,7 +12,7 @@ import {
 
 const { width } = Dimensions.get('window');
 
-const VideoError = ({ visible, onSubmit, theme }) => {
+const VideoError = ({ visible, onSubmit, error, theme }) => {
     return (
         <Portal>
             <Modal
@@ -34,14 +34,11 @@ const VideoError = ({ visible, onSubmit, theme }) => {
                     style={styles.subheading}
                 >{`Something went wrong!`}</Subheading>
 
-                <Text style={styles.text}>
-                    After analysing the issue, we will fix it as soon as
-                    possible!
-                </Text>
+                <Text style={styles.text}>{error}</Text>
 
                 <Button
                     mode="contained"
-                    color={theme.colors.accent}
+                    color={theme.colors.primary}
                     style={styles.button}
                     onPress={onSubmit}
                 >

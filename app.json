@@ -27,7 +27,7 @@
       },
       "package": "com.nurikjohn.cassette",
       "config": {
-        "googleMobileAdsAppId": "ca-app-pub-3813010680847679~6518219426"
+        "googleMobileAdsAppId": "ca-app-pub-1207589833336849~4610146899"
       },
       "permissions": [
         "BILLING"
