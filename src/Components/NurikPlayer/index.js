@@ -4,7 +4,6 @@ import {
     Dimensions,
     Animated,
     TouchableWithoutFeedback,
-    TouchableNativeFeedback,
     BackHandler,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -13,7 +12,6 @@ import {
     Text,
     ActivityIndicator,
     Appbar,
-    Button,
     IconButton,
 } from 'react-native-paper';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
@@ -31,7 +29,6 @@ import {
     FullscreenExitIcon,
 } from './icons';
 import VideoError from '../VideoError';
-import { log } from 'react-native-reanimated';
 
 const formatMillis = (millis) => {
     const totalSeconds = millis / 1000;
@@ -89,10 +86,6 @@ const NurikVideoPlayer = ({
     const [forwardOpacity] = useState(new Animated.Value(0));
     const [hidden, setHidden] = useState(false);
     const [timer, setTimer] = useState(null);
-    const [countBackward, setCountBackward] = useState(0);
-    const [countForward, setCountForward] = useState(0);
-    const [lastPressBackward, setLastPressBackward] = useState(0);
-    const [lastPressForward, setLastPressForward] = useState(0);
 
     const [landscape, setLandscape] = useState(false);
     const [playing, setPlaying] = useState(false);
@@ -101,8 +94,8 @@ const NurikVideoPlayer = ({
     const [duration, setDuration] = useState(0);
     const [loaded, setLoaded] = useState(0);
     const [progress, setProgress] = useState(0);
-    const [dimensions, setDimensions] = useState(Dimensions.get('window'));
     const [visible, setVisible] = useState(false);
+    const dimensions = Dimensions.get('window');
 
     const { width, height } = {
         width: landscape ? dimensions.height : dimensions.width,
@@ -359,215 +352,6 @@ const NurikVideoPlayer = ({
                                 position: 'relative',
                             }}
                         >
-                            <View
-                                style={{
-                                    position: 'absolute',
-                                    zIndex: 13,
-                                    top: 0,
-                                    bottom: 0,
-                                    right: 0,
-                                    left: 0,
-                                    flexDirection: 'row',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <View
-                                    style={{
-                                        borderRadius: 1000,
-                                        width: height / 1.5,
-                                        height: height / 1.5,
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <TouchableNativeFeedback
-                                        onPress={() => {
-                                            var delta =
-                                                new Date().getTime() -
-                                                lastPressBackward;
-
-                                            console.log(
-                                                lastPressBackward,
-                                                delta
-                                            );
-
-                                            if (delta < 500) {
-                                                console.log('DOUBLE TAP');
-                                                seek(-1);
-                                                showingAnimation = Animated.timing(
-                                                    backwardOpacity,
-                                                    {
-                                                        toValue: 1,
-                                                        duration: 50,
-                                                        useNativeDriver: true,
-                                                    }
-                                                );
-                                                showingAnimation.start(() => {
-                                                    hideAnimation = Animated.timing(
-                                                        backwardOpacity,
-                                                        {
-                                                            toValue: 0,
-                                                            duration: 0,
-                                                            useNativeDriver: true,
-                                                        }
-                                                    );
-                                                    hideAnimation.start(() => {
-                                                        showingAnimation = Animated.timing(
-                                                            backwardOpacity,
-                                                            {
-                                                                toValue: 1,
-                                                                duration: 50,
-                                                                useNativeDriver: true,
-                                                            }
-                                                        );
-                                                        showingAnimation.start(
-                                                            () => {
-                                                                hideAnimation = Animated.timing(
-                                                                    backwardOpacity,
-                                                                    {
-                                                                        toValue: 0,
-                                                                        duration: 0,
-                                                                        useNativeDriver: true,
-                                                                    }
-                                                                );
-                                                                hideAnimation.start();
-                                                            }
-                                                        );
-                                                    });
-                                                });
-                                            }
-
-                                            setLastPressBackward(
-                                                new Date().getTime()
-                                            );
-                                        }}
-                                    >
-                                        <View
-                                            style={{
-                                                width: height / 1.5,
-                                                height: height / 1.5,
-                                            }}
-                                        >
-                                            <Animated.View
-                                                style={{
-                                                    width: height / 1.5,
-                                                    height: height / 1.5,
-                                                    // opacity: backwardOpacity,
-                                                }}
-                                                pointerEvents={
-                                                    hidden ? 'none' : 'auto'
-                                                }
-                                            >
-                                                <View
-                                                    style={{
-                                                        width: height / 1.5,
-                                                        height: height / 1.5,
-                                                        backgroundColor: 'red',
-                                                    }}
-                                                ></View>
-                                            </Animated.View>
-                                        </View>
-                                    </TouchableNativeFeedback>
-                                </View>
-                                <View
-                                    style={{
-                                        borderRadius: 1000,
-                                        width: height / 1.5,
-                                        height: height / 1.5,
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <TouchableNativeFeedback
-                                        onPress={() => {
-                                            var delta =
-                                                new Date().getTime() -
-                                                lastPressForward;
-
-                                            console.log(
-                                                lastPressForward,
-                                                delta
-                                            );
-
-                                            if (delta < 500) {
-                                                console.log('DOUBLE TAP');
-                                                seek(1);
-                                                showingAnimation = Animated.timing(
-                                                    forwardOpacity,
-                                                    {
-                                                        toValue: 1,
-                                                        duration: 50,
-                                                        useNativeDriver: true,
-                                                    }
-                                                );
-                                                showingAnimation.start(() => {
-                                                    hideAnimation = Animated.timing(
-                                                        forwardOpacity,
-                                                        {
-                                                            toValue: 0,
-                                                            duration: 0,
-                                                            useNativeDriver: true,
-                                                        }
-                                                    );
-                                                    hideAnimation.start(() => {
-                                                        showingAnimation = Animated.timing(
-                                                            forwardOpacity,
-                                                            {
-                                                                toValue: 1,
-                                                                duration: 50,
-                                                                useNativeDriver: true,
-                                                            }
-                                                        );
-                                                        showingAnimation.start(
-                                                            () => {
-                                                                hideAnimation = Animated.timing(
-                                                                    forwardOpacity,
-                                                                    {
-                                                                        toValue: 0,
-                                                                        duration: 0,
-                                                                        useNativeDriver: true,
-                                                                    }
-                                                                );
-                                                                hideAnimation.start();
-                                                            }
-                                                        );
-                                                    });
-                                                });
-                                            }
-
-                                            setLastPressForward(
-                                                new Date().getTime()
-                                            );
-                                        }}
-                                    >
-                                        <View
-                                            style={{
-                                                width: height / 1.5,
-                                                height: height / 1.5,
-                                            }}
-                                        >
-                                            <Animated.View
-                                                style={{
-                                                    width: height / 1.5,
-                                                    height: height / 1.5,
-                                                    opacity: forwardOpacity,
-                                                }}
-                                                pointerEvents={
-                                                    hidden ? 'none' : 'auto'
-                                                }
-                                            >
-                                                <View
-                                                    style={{
-                                                        width: height / 1.5,
-                                                        height: height / 1.5,
-                                                        backgroundColor: 'red',
-                                                    }}
-                                                ></View>
-                                            </Animated.View>
-                                        </View>
-                                    </TouchableNativeFeedback>
-                                </View>
-                            </View>
-
                             {error ? (
                                 <Text style={styles.errorContainer}>
                                     {error}
