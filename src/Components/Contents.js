@@ -58,10 +58,9 @@ const Contents = ({ handleSelect, filters, setFilters, type }) => {
                     ...filters,
                 },
                 true,
-                state.data
+                state.data,
+                () => setPage(page + 1)
             );
-
-            setPage(page + 1);
         }
     };
     // *** API CALL SECTION - END*** //

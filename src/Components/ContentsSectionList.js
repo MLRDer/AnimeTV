@@ -32,7 +32,7 @@ const ContentsSectionListTest = ({
     return (
         <FlatList
             data={data}
-            onLayout={onLayout}
+            // onLayout={onLayout}
             numColumns={2}
             refreshControl={refreshControl}
             showsVerticalScrollIndicator={false}

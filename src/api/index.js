@@ -29,7 +29,7 @@ class Api {
         return _.flatten(newArr);
     }
 
-    getAll = (filters, more = false, oldData) => {
+    getAll = (filters, more = false, oldData, callback) => {
         !more &&
             this.stateCallback({
                 loading: true,
@@ -50,6 +50,8 @@ class Api {
                     data: newData,
                     count,
                 });
+
+                more && data.length && callback();
             })
             .catch((error) => {
                 console.log('ERROR: ', error);
