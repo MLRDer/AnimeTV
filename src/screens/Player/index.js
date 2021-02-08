@@ -36,7 +36,7 @@ const Player = ({ navigation, route }) => {
             if (!rewarded) goBack();
         });
 
-        // showAd();
+        showAd();
 
         return () => {
             AdMobRewarded.removeAllListeners();
